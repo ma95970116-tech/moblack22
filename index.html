@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>تتبّع المشروع</title>
+<title>مشروع التخرج 2027</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#eef2f8;--card:#fff;--tx:#0f1b3d;--mut:#6b7794;--bd:#e3e8f2;--side:#0a1433;--pri:#2563eb;--soft:#f5f7fb;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -80,19 +80,23 @@ function seedData(){D.tasks=[];D.parts=B0.map(function(b,i){return{id:"p"+(i+10)
 var LOG_STORE_KEY="project_tracker_activity_log_v1";
 function readLocalLogs(){try{var raw=localStorage.getItem(LOG_STORE_KEY);var a=raw?JSON.parse(raw):[];return Array.isArray(a)?a:[]}catch(e){return []}}
 function saveLocalLogs(a){try{localStorage.setItem(LOG_STORE_KEY,JSON.stringify(a))}catch(e){}}
+var SESSION_KEY="project_tracker_remembered_session_v1";
+function readSession(){try{var x=JSON.parse(localStorage.getItem(SESSION_KEY)||"null");return x&&typeof x.me==="string"?x:null}catch(e){return null}}
+function saveSession(name,isOwner,remember){try{if(remember)localStorage.setItem(SESSION_KEY,JSON.stringify({me:name,own:!!isOwner,ts:Date.now()}));else localStorage.removeItem(SESSION_KEY)}catch(e){}}
+function clearSession(){try{localStorage.removeItem(SESSION_KEY)}catch(e){}}
 function mergeLogs(a,b){var m={};(a||[]).concat(b||[]).forEach(function(x){if(x&&x.id)m[x.id]=x});return Object.keys(m).map(function(k){return m[k]}).sort(function(x,y){return (x.ts||0)-(y.ts||0)})}
 function put(c,o){var id=o.id;if(c==="logs"){D.logs=mergeLogs(D.logs,[o]);saveLocalLogs(D.logs)}if(db){var x={};for(var k in o)if(k!="id")x[k]=o[k];return db.collection(c).doc(id).set(x).then(function(){return true}).catch(function(e){if(c==="logs")return true;toast("تعذّر الحفظ: "+(e&&e.code||e&&e.message||"")+"");return false})}var i=D[c].findIndex(function(z){return z.id==id});if(i<0)D[c].push(o);else D[c][i]=o;if(c==="logs")saveLocalLogs(D.logs);go();return Promise.resolve(true)}
 function rm(c,id){if(db)return db.collection(c).doc(id).delete();D[c]=D[c].filter(function(z){return z.id!=id});if(c==="logs")saveLocalLogs(D.logs);go();return Promise.resolve()}
 function act(t){put("logs",{id:"l"+Date.now()+Math.floor(Math.random()*99),w:(own&&me&&me!="المالك"?"المالك كـ "+me:me||"زائر"),t:t,ts:Date.now()})}
 function sub(c,seed){return db.collection(c).onSnapshot(function(sn){var a=sn.docs.map(function(d){var o=d.data();var r={id:d.id};for(var k in o)r[k]=o[k];return r});
- if(c==="logs"){var local=readLocalLogs();a=mergeLogs(a,local);D.logs=a;saveLocalLogs(a);if(local.length){var cloudIds={};sn.docs.forEach(function(d){cloudIds[d.id]=1});local.forEach(function(o){if(!cloudIds[o.id])put("logs",o)})}go();return}
+ if(c==="logs"){var local=readLocalLogs();a=mergeLogs(local,a);D.logs=a;saveLocalLogs(a);if(local.length){var cloudIds={};sn.docs.forEach(function(d){cloudIds[d.id]=1});local.forEach(function(o){if(!cloudIds[o.id]){var x={};for(var k in o)if(k!=="id")x[k]=o[k];db.collection("logs").doc(o.id).set(x).catch(function(){})}})}go();return}
  if(!a.length&&seed&&!seeded[c]&&me!==undefined){seeded[c]=1;D[c].forEach(function(o){put(c,o)});return}
  if(c==="tasks"){a=[]}
  D[c]=a;go()},function(){if(c==="logs"){D.logs=mergeLogs(D.logs,readLocalLogs());go()}})}
-async function boot(){seedData();D.logs=readLocalLogs();
+async function boot(){seedData();D.logs=readLocalLogs();var savedSession=readSession();if(savedSession){var validNames=everyone();if(validNames.indexOf(savedSession.me)>=0||savedSession.me==="المالك"){me=savedSession.me;own=!!savedSession.own&& (isOwnerName(me)||me==="المالك");}else clearSession();}
  try{db=await claude.use("db");A=await claude.use("assets");S=await claude.use("sample")}catch(e){}
  if(db){var keep={tasks:D.tasks,parts:D.parts};D.tasks=keep.tasks;D.parts=keep.parts;sub("tasks",1);sub("parts",1);sub("logs");sub("inst");sub("msgs");sub("dms");sub("vis")}
- ready=true;go();if(!me){loginM();var cancel=$("mb").querySelector("button.g");if(cancel)cancel.style.display="none";$("mb").insertAdjacentHTML("beforeend", '<p class="note">سجّل الدخول للمتابعة إلى الصفحة الرئيسية.</p>')}}
+ ready=true;go();if(!me){loginM();var cancel=$("mb").querySelector("button.g");if(cancel)cancel.style.display="none";$("mb").insertAdjacentHTML("beforeend", '<p class="note">سجّل الدخول للمتابعة. فعّل «تذكرني» حتى لا تحتاج لتسجيل الدخول بعد تحديث الصفحة.</p>')}}
 /* auth */
 async function sha(s){var b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")}
 function modal(h){$("mb").innerHTML=h;$("md").className="on"}function closeM(){CH=null;$("md").className=""}
@@ -100,12 +104,12 @@ function everyone(){return [SUP,LEAD].concat(MEM)}
 function ownerNames(){return [SUP,LEAD,"محمد علي عنتر جلال","محمد ناصر عبدالحميد","رامز طارق محمد"]}
 function isOwnerName(n){return ownerNames().indexOf(n)>=0}
 function canSend(){return own||isOwnerName(me)}
-function loginM(){modal('<div style="text-align:center;font-size:42px">🤖</div><h3 style="margin:0">تسجيل الدخول إلى مشروع التخرج</h3><p class="note" style="text-align:center">روبوت التنظيف المنزلي الذكي · أدخل اسمك وكلمة المرور للمتابعة</p><label for="lw">اسم العضو</label><select id="lw">'+everyone().map(function(n){return '<option>'+esc(n)+'</option>'}).join("")+'</select><label for="lp">كلمة المرور</label><input id="lp" type="password" placeholder="اكتب كلمة المرور الخاصة بك" autocomplete="current-password"><div class="row"><button class="btn" onclick="login()">دخول إلى الموقع</button><button class="btn g" onclick="closeM()">إلغاء</button></div><a href="#" onclick="ownM();return false" class="note" style="text-align:center">تسجيل دخول المالك</a><p class="note" style="text-align:center">حسابك مخصص لك؛ لا تشارك كلمة المرور مع أي شخص.</p>');$("md").className="on login-screen"}
-function ownM(){modal('<div style="text-align:center;font-size:42px">🔐</div><h3 style="margin:0">تسجيل دخول المالك</h3><p class="note" style="text-align:center">أدخل كلمة مرور المالك للمتابعة</p><input id="op" type="password" placeholder="كلمة سر المالك" autocomplete="current-password"><div class="row"><button class="btn" onclick="ownIn()">دخول المالك</button><button class="btn g" onclick="loginM()">رجوع</button></div>');$("md").className="on login-screen"}
-async function login(){var p=$("lp").value,w=$("lw").value,i=everyone().indexOf(w),h=await sha(p);if(i<0||(isOwnerName(w)?h!==OH:h!==HP[i])){toast("كلمة السر غير صحيحة");return}me=w;own=isOwnerName(w);closeM();toast(own?"أهلًا "+w+" — صلاحية المالك كاملة":"أهلًا "+w);act(own?"دخول المالك":"دخول عضو الفريق");go()}
-async function ownIn(){if(await sha($("op").value)==OH){own=true;if(!me||me=="المالك")me="المالك";closeM();toast("أهلًا بالمالك — صلاحية كاملة على كل الأعضاء");act("دخول المالك");go()}else toast("كلمة سر المالك غير صحيحة")}
-function logout(){act("تسجيل خروج");me=null;own=false;contactsOpen=false;go();loginM()}
-function outO(){act("خروج المالك");own=false;me=null;contactsOpen=false;go();loginM()}
+function loginM(){modal('<div style="text-align:center;font-size:42px">🤖</div><h3 style="margin:0">تسجيل الدخول إلى مشروع التخرج</h3><p class="note" style="text-align:center">روبوت التنظيف المنزلي الذكي · أدخل اسمك وكلمة المرور للمتابعة</p><label for="lw">اسم العضو</label><select id="lw">'+everyone().map(function(n){return '<option>'+esc(n)+'</option>'}).join("")+'</select><label for="lp">كلمة المرور</label><input id="lp" type="password" placeholder="اكتب كلمة المرور الخاصة بك" autocomplete="current-password"><label style="display:flex;align-items:center;gap:8px;font-weight:400"><input id="remember-me" type="checkbox" style="width:auto" checked> تذكرني على هذا الجهاز</label><div class="row"><button class="btn" onclick="login()">دخول إلى الموقع</button><button class="btn g" onclick="closeM()">إلغاء</button></div><a href="#" onclick="ownM();return false" class="note" style="text-align:center">تسجيل دخول المالك</a><p class="note" style="text-align:center">حسابك مخصص لك؛ لا تشارك كلمة المرور مع أي شخص.</p>');$("md").className="on login-screen"}
+function ownM(){modal('<div style="text-align:center;font-size:42px">🔐</div><h3 style="margin:0">تسجيل دخول المالك</h3><p class="note" style="text-align:center">أدخل كلمة مرور المالك للمتابعة</p><input id="op" type="password" placeholder="كلمة سر المالك" autocomplete="current-password"><label style="display:flex;align-items:center;gap:8px;font-weight:400"><input id="remember-owner" type="checkbox" style="width:auto" checked> تذكرني على هذا الجهاز</label><div class="row"><button class="btn" onclick="ownIn()">دخول المالك</button><button class="btn g" onclick="loginM()">رجوع</button></div>');$("md").className="on login-screen"}
+async function login(){var p=$("lp").value,w=$("lw").value,i=everyone().indexOf(w),h=await sha(p);if(i<0||(isOwnerName(w)?h!==OH:h!==HP[i])){toast("كلمة السر غير صحيحة");return}me=w;own=isOwnerName(w);saveSession(me,own,!!($("remember-me")&&$("remember-me").checked));closeM();toast(own?"أهلًا "+w+" — صلاحية المالك كاملة":"أهلًا "+w);act(own?"دخول المالك":"دخول عضو الفريق");go()}
+async function ownIn(){if(await sha($("op").value)==OH){own=true;if(!me||me=="المالك")me="المالك";saveSession(me,own,!!($("remember-owner")&&$("remember-owner").checked));closeM();toast("أهلًا بالمالك — صلاحية كاملة على كل الأعضاء");act("دخول المالك");go()}else toast("كلمة سر المالك غير صحيحة")}
+function logout(){act("تسجيل خروج");clearSession();me=null;own=false;contactsOpen=false;go();loginM()}
+function outO(){act("خروج المالك");clearSession();own=false;me=null;contactsOpen=false;go();loginM()}
 function asM(v){me=v;act("المالك يعمل كـ "+v);go()}
 function ctM(){if(!need())return;contactsOpen=!contactsOpen;go();toast(contactsOpen?(own?"تم فتح بيانات اتصال الفريق":"تم فتح بيانات الاتصال الخاصة بك"):"تم إخفاء بيانات الاتصال")}
 function chatI(i){chatM(everyone()[i])}
