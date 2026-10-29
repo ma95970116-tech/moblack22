@@ -76,15 +76,20 @@ function pc(a,b){return b?Math.round(a/b*100):0}
 function dt(ts){var d=new Date(ts);return d.toISOString().slice(0,10)+" "+d.toTimeString().slice(0,5)}
 function toast(m){var t=$("toast");t.textContent=m;t.style.display="block";clearTimeout(toast.h);toast.h=setTimeout(function(){t.style.display="none"},4500)}
 function seedData(){D.tasks=[];D.parts=B0.map(function(b,i){return{id:"p"+(i+10),n:b[0],q:b[1],u:b[2],s:i<9?1:0}})}
-/* data layer: shared db when available, local memory otherwise */
-function put(c,o){var id=o.id;if(db){var x={};for(var k in o)if(k!="id")x[k]=o[k];return db.collection(c).doc(id).set(x).then(function(){return true}).catch(function(e){toast("تعذّر الحفظ: "+(e&&e.code||e&&e.message||"")+"");return false})}var i=D[c].findIndex(function(z){return z.id==id});if(i<0)D[c].push(o);else D[c][i]=o;go();return Promise.resolve(true)}
-function rm(c,id){if(db)return db.collection(c).doc(id).delete();D[c]=D[c].filter(function(z){return z.id!=id});go();return Promise.resolve()}
+/* data layer: shared db when available; activity log also has a durable browser fallback */
+var LOG_STORE_KEY="project_tracker_activity_log_v1";
+function readLocalLogs(){try{var raw=localStorage.getItem(LOG_STORE_KEY);var a=raw?JSON.parse(raw):[];return Array.isArray(a)?a:[]}catch(e){return []}}
+function saveLocalLogs(a){try{localStorage.setItem(LOG_STORE_KEY,JSON.stringify(a))}catch(e){}}
+function mergeLogs(a,b){var m={};(a||[]).concat(b||[]).forEach(function(x){if(x&&x.id)m[x.id]=x});return Object.keys(m).map(function(k){return m[k]}).sort(function(x,y){return (x.ts||0)-(y.ts||0)})}
+function put(c,o){var id=o.id;if(c==="logs"){D.logs=mergeLogs(D.logs,[o]);saveLocalLogs(D.logs)}if(db){var x={};for(var k in o)if(k!="id")x[k]=o[k];return db.collection(c).doc(id).set(x).then(function(){return true}).catch(function(e){if(c==="logs")return true;toast("تعذّر الحفظ: "+(e&&e.code||e&&e.message||"")+"");return false})}var i=D[c].findIndex(function(z){return z.id==id});if(i<0)D[c].push(o);else D[c][i]=o;if(c==="logs")saveLocalLogs(D.logs);go();return Promise.resolve(true)}
+function rm(c,id){if(db)return db.collection(c).doc(id).delete();D[c]=D[c].filter(function(z){return z.id!=id});if(c==="logs")saveLocalLogs(D.logs);go();return Promise.resolve()}
 function act(t){put("logs",{id:"l"+Date.now()+Math.floor(Math.random()*99),w:(own&&me&&me!="المالك"?"المالك كـ "+me:me||"زائر"),t:t,ts:Date.now()})}
 function sub(c,seed){return db.collection(c).onSnapshot(function(sn){var a=sn.docs.map(function(d){var o=d.data();var r={id:d.id};for(var k in o)r[k]=o[k];return r});
+ if(c==="logs"){var local=readLocalLogs();a=mergeLogs(a,local);D.logs=a;saveLocalLogs(a);if(local.length){var cloudIds={};sn.docs.forEach(function(d){cloudIds[d.id]=1});local.forEach(function(o){if(!cloudIds[o.id])put("logs",o)})}go();return}
  if(!a.length&&seed&&!seeded[c]&&me!==undefined){seeded[c]=1;D[c].forEach(function(o){put(c,o)});return}
- if(c=="tasks"){a=[]}
- D[c]=a;go()},function(){})}
-async function boot(){seedData();
+ if(c==="tasks"){a=[]}
+ D[c]=a;go()},function(){if(c==="logs"){D.logs=mergeLogs(D.logs,readLocalLogs());go()}})}
+async function boot(){seedData();D.logs=readLocalLogs();
  try{db=await claude.use("db");A=await claude.use("assets");S=await claude.use("sample")}catch(e){}
  if(db){var keep={tasks:D.tasks,parts:D.parts};D.tasks=keep.tasks;D.parts=keep.parts;sub("tasks",1);sub("parts",1);sub("logs");sub("inst");sub("msgs");sub("dms");sub("vis")}
  ready=true;go();if(!me){loginM();var cancel=$("mb").querySelector("button.g");if(cancel)cancel.style.display="none";$("mb").insertAdjacentHTML("beforeend", '<p class="note">سجّل الدخول للمتابعة إلى الصفحة الرئيسية.</p>')}}
