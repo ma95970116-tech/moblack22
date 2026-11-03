@@ -14,7 +14,8 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   const { SUPABASE_URL: url, SUPABASE_SECRET_KEY: secret, AUTH_BRIDGE_SECRET: bridge } = process.env;
   const pub = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
-  if (!url || !secret || !pub || !bridge) return res.status(500).json({ error: 'إعدادات الخادم ناقصة (متغيرات Vercel)' });
+  const miss = [['SUPABASE_URL', url], ['SUPABASE_SECRET_KEY', secret], ['SUPABASE_PUBLISHABLE_KEY', pub], ['AUTH_BRIDGE_SECRET', bridge]].filter((x) => !x[1]).map((x) => x[0]);
+  if (miss.length) return res.status(500).json({ error: 'متغيرات Vercel الناقصة: ' + miss.join(' ، ') });
 
   let body = req.body; if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
   const u = String((body && body.username) || '').trim().replace(/\s+/g, ' ');
