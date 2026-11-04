@@ -367,13 +367,16 @@ function roster(){var rows=everyone().map(function(n,i){var c=CT&&CT[n],tk=D.tas
 /* actions */
 var STATUS_OWNERS=["د. محمود محروس","م. دعاء","رامز طارق محمد","محمد ناصر عبدالحميد","محمد علي عنتر جلال"];
 var STATUS_SHORT={"محمد علي":"محمد علي عنتر جلال","محمد ناصر":"محمد ناصر عبدالحميد","رامز طارق":"رامز طارق محمد","د. محمود محروس":"د. محمود محروس","م. دعاء":"م. دعاء"};
+var DEL_OWNERS=["د. محمود محروس","م. دعاء","رامز طارق محمد","محمد ناصر عبدالحميد","محمد علي عنتر جلال","السيد عبداللاه السيد"];
+function taskCreator(t){if(t.by)return t.by;var lg=D.logs.filter(function(l){return l.t&&l.t.indexOf("أضاف مهمة «"+t.n+"»")===0}).sort(function(a,b){return b.ts-a.ts})[0];return lg?lg.w:""}
+function canDeleteT(t){if(!me||!t)return false;if(DEL_OWNERS.indexOf(me)>=0)return true;return taskCreator(t)===me}
 function canChangeT(t){if(!me||!t)return false;if(own)return true;if(STATUS_OWNERS.indexOf(me)>=0)return true;var full=STATUS_SHORT[t.o]||t.o;return full===me}
 async function cycleT(id){if(!need())return;var t=D.tasks.filter(function(x){return x.id==id})[0];if(!t)return;
  if(!canChangeT(t)){toast("غير مسموح لك بتغيير حالة هذه المهمة. التغيير متاح للشخص المسؤول عنها فقط");return}
  var n={d:"n",n:"p",p:"d"}[t.s],o=Object.assign({},t,{s:n});
  var ok=await put("tasks",o);if(!ok)return;act("غيّر حالة المهمة «"+t.n+"» إلى "+ST[n])}
-function delT(id){if(!need())return;var t=D.tasks.filter(function(x){return x.id==id})[0];if(!confirm("حذف المهمة؟"))return;rm("tasks",id);act("حذف المهمة «"+t.n+"»")}
-function addT(e){e.preventDefault();if(!need())return;var f=e.target,o={id:"t"+Date.now(),n:f.n.value,o:f.o.value,ph:+f.ph.value,s:"n",due:f.d.value||END,desc:(f.desc?f.desc.value:"").trim()};put("tasks",o);act("أضاف مهمة «"+o.n+"» في قسم "+PH[o.ph][0]);f.reset()}
+function delT(id){if(!need())return;var t=D.tasks.filter(function(x){return x.id==id})[0];if(!t)return;if(!canDeleteT(t)){toast("غير مسموح لك بحذف هذه المهمة. الحذف متاح لمن أضافها أو للمصرح لهم فقط");return}if(!confirm("حذف المهمة؟"))return;rm("tasks",id);act("حذف المهمة «"+t.n+"»")}
+function addT(e){e.preventDefault();if(!need())return;var f=e.target,o={id:"t"+Date.now(),n:f.n.value,o:f.o.value,ph:+f.ph.value,s:"n",due:f.d.value||END,desc:(f.desc?f.desc.value:"").trim(),by:me};put("tasks",o);act("أضاف مهمة «"+o.n+"» في قسم "+PH[o.ph][0]);f.reset()}
 function setPart(id,v){var p=D.parts.filter(function(x){return x.id==id})[0];v=+v;
  if(!me){loginM();go();return}
  if(v==1||v==3){proofM(id,v);return}
@@ -490,7 +493,7 @@ function cnt(){var c={d:0,p:0,n:0};D.tasks.forEach(function(t){c[t.s]++});return
 function donut(d,center,sub,size){var r=52,C=2*Math.PI*r,off=0,tot=d.reduce(function(a,x){return a+x[1]},0)||1,s='<svg width="'+size+'" height="'+size+'" viewBox="0 0 140 140"><circle cx="70" cy="70" r="52" fill="none" stroke="var(--soft)" stroke-width="16"/>';
  d.forEach(function(x){var l=x[1]/tot*C;s+='<circle cx="70" cy="70" r="52" fill="none" stroke="'+x[2]+'" stroke-width="16" stroke-dasharray="'+l+' '+(C-l)+'" stroke-dashoffset="'+(-off)+'" transform="rotate(-90 70 70)"/>';off+=l});
  return s+'<text x="70" y="70" text-anchor="middle" font-size="26" font-weight="700" fill="var(--tx)">'+center+'</text><text x="70" y="90" text-anchor="middle" font-size="11" fill="var(--mut)">'+sub+'</text></svg>'}
-function trow(t){return '<tr><td>'+esc(t.n)+'</td><td>'+esc(t.o)+'</td><td>'+(canChangeT(t)?'<button class="pill s-'+t.s+'" onclick="cycleT(\''+t.id+'\')" title="اضغط للتغيير">'+ST[t.s]+'</button>':'<span class="pill s-'+t.s+'" title="التغيير للمسؤول عن المهمة فقط">'+ST[t.s]+'</span>')+'</td><td>'+esc(t.due)+'</td>'+(me?'<td><button class="pill s-n" onclick="delT(\''+t.id+'\')">حذف</button></td>':'')+'</tr>'}
+function trow(t){return '<tr><td>'+esc(t.n)+'</td><td>'+esc(t.o)+'</td><td>'+(canChangeT(t)?'<button class="pill s-'+t.s+'" onclick="cycleT(\''+t.id+'\')" title="اضغط للتغيير">'+ST[t.s]+'</button>':'<span class="pill s-'+t.s+'" title="التغيير للمسؤول عن المهمة فقط">'+ST[t.s]+'</span>')+'</td><td>'+esc(t.due)+'</td>'+(me?'<td>'+(canDeleteT(t)?'<button class="pill s-n" onclick="delT(\''+t.id+'\')">حذف</button>':'')+'</td>':'')+'</tr>'}
 function gal(list,n){var a=list.filter(function(x){return x.img}).slice(0,n);return a.length?'<div class="gal">'+a.map(function(x){return '<figure><img src="'+su(x.img)+'" data-sp="'+esc(x.img)+'" alt=""><figcaption>'+esc(x.t||x.n)+'</figcaption></figure>'}).join("")+'</div>':'<p class="note">لا توجد صور بعد.</p>'}
 function ex(){return D.parts.filter(function(p){return p.s==3}).length}
 /* ===== Home dashboard helpers ===== */
@@ -555,7 +558,7 @@ function tkCard(t){var late=tkLate(t),soon=tkSoon(t),can=canChangeT(t);
  return '<article class="tk-card tk-'+t.s+(late?' is-late':'')+'"><div class="tk-top"><b>'+esc(t.n)+'</b>'+flag+'</div>'
   +'<div class="tk-meta"><span>👤 '+esc(t.o||NA)+'</span><span>🧩 '+esc(PH[t.ph]?PH[t.ph][0]:"—")+'</span><span>📅 '+esc(t.due||"—")+'</span></div>'
   +(t.desc?'<div class="tk-desc">'+esc(t.desc)+'</div>':'')
-  +'<div class="tk-foot">'+st+'<span class="tk-acts"><button class="pill s-p" onclick="tkDetail(\''+t.id+'\')">تفاصيل</button>'+(me?'<button class="pill s-p" onclick="tkEdit(\''+t.id+'\')">تعديل</button><button class="pill s-n" onclick="delT(\''+t.id+'\')">حذف</button>':'')+'</span></div></article>'}
+  +'<div class="tk-foot">'+st+'<span class="tk-acts"><button class="pill s-p" onclick="tkDetail(\''+t.id+'\')">تفاصيل</button>'+(me?'<button class="pill s-p" onclick="tkEdit(\''+t.id+'\')">تعديل</button>':'')+(canDeleteT(t)?'<button class="pill s-n" onclick="delT(\''+t.id+'\')">حذف</button>':'')+'</span></div></article>'}
 function tkGrid(items){return items.length?'<div class="tk-grid">'+items.map(tkCard).join("")+'</div>':'<div class="hm-empty">لا توجد مهام مطابقة.</div>'}
 function tkTable(items){return items.length?'<div class="wrap"><table class="tbl"><tr><th>المهمة</th><th>المسؤول</th><th>الحالة</th><th>الاستحقاق</th>'+(me?'<th></th>':'')+'</tr>'+items.map(trow).join("")+'</table></div>':'<div class="hm-empty">لا توجد مهام مطابقة.</div>'}
 function tkStatsHtml(){var n=D.tasks.length,c=cnt(),late=D.tasks.filter(tkLate).length,pr=pc(c.d,n);
