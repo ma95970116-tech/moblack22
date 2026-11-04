@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" class="bt">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -72,7 +72,7 @@ aside a{transition:background .2s,transform .2s}aside a:hover{transform:translat
 .rbg{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.rbg label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mut)}.rbg label input:not([type=checkbox]),.rbg label select{width:100%}.rbg .upd{margin:0}
 [hidden]{display:none!important}button:disabled{opacity:.45;cursor:not-allowed}
 </style>
-</head>
+<style>html.bt #lg{visibility:hidden}</style></head>
 <body>
 <aside id="nav"></aside>
 <main>
@@ -194,7 +194,7 @@ function sub(c,seed){return db.collection(c).onSnapshot(function(sn){var a=sn.do
 async function boot(){seedData();
  try{await sbInit();db=sbDb();S=sbAI();await sbRestore()}catch(e){db=null;S=null;setTimeout(function(){toast("تعذّر الاتصال بـ Supabase: "+(e&&e.message||e))},300)}
  if(db){var keep={tasks:D.tasks,parts:D.parts};D.tasks=keep.tasks;D.parts=keep.parts;sub("tasks",1);sub("parts",1);sub("logs");sub("inst");sub("msgs");sub("dms");sub("vis");sub("tests");sub("exp");sub("cfg")}
- ready=true;go()}
+ ready=true;go();document.documentElement.classList.remove("bt")}
 /* auth */
 async function sha(s){var b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")}
 function modal(h){$("mb").innerHTML=h;$("md").className="on"}function closeM(){CH=null;$("md").className=""}
@@ -859,7 +859,7 @@ function go(){try{if(SB.sess)localStorage.setItem("sbme",JSON.stringify({me:me})
  $("who").innerHTML=(me?'<span>🟢 '+esc(me)+'</span><button class="btn g" onclick="logout()">خروج</button>':'<span class="note">وضع المشاهدة</span><button class="btn" onclick="loginM()">دخول الفريق</button>')+(own?'<span>🔑 المالك — دخول كـ</span><select onchange="asM(this.value)"><option>المالك</option>'+everyone().map(function(n){return '<option'+(n==me?' selected':'')+'>'+esc(n)+'</option>'}).join("")+'</select><button class="btn g" onclick="outO()">خروج المالك</button>':'');
  $("nav").innerHTML='<div class="logo"><i>🎓</i><div><b>تتبّع المشروع</b><small>لوحة التحكم</small></div></div>'+PAGES.filter(function(x){return x[0]=="log"?own:(x[0]=="msgs"||x[0]=="visitors"||x[0]=="chats")?!!me:true}).map(function(x){return '<a href="#'+x[0]+'" class="'+(x[0]==h?"on":"")+'">'+x[1]+'</a>'}).join("")+'<div class="sp"></div><button class="tg" style="background:#2563eb;border-color:#2563eb;color:#fff" onclick="visM()">✉️ رسالة للفريق (زوار)</button><button class="tg" onclick="tg()">🌙 الوضع الليلي</button>'}
 function tg(){var r=document.documentElement,d=r.getAttribute("data-theme")=="dark"||(!r.getAttribute("data-theme")&&matchMedia("(prefers-color-scheme:dark)").matches);r.setAttribute("data-theme",d?"light":"dark")}
-buildLogin();addEventListener("hashchange",go);boot();setInterval(rbTick,1000);
+buildLogin();setTimeout(function(){document.documentElement.classList.remove("bt")},8000);addEventListener("hashchange",go);boot();setInterval(rbTick,1000);
 </script>
 </body>
 </html>
