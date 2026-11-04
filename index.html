@@ -47,6 +47,8 @@ form.f{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center
 #toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:#0f1b3d;color:#fff;padding:10px 18px;border-radius:10px;display:none;z-index:60;max-width:90vw;font-size:14px}
 #lg{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}#lg .box{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:26px;width:min(380px,100%);display:flex;flex-direction:column;gap:12px}#lg h2{margin:0;text-align:center}#lg p{margin:0;text-align:center;color:var(--mut);font-size:13px}
 .note{font-size:12px;color:var(--mut)}
+.hm-txt{white-space:pre-wrap;font-size:14px;margin-top:4px;overflow-wrap:anywhere}
+.hm-ui{display:block;max-width:100%;width:260px;height:auto;border-radius:10px;margin-top:8px}
 @media(max-width:900px){body{flex-direction:column}aside{width:100%;height:auto;position:static;flex-direction:row;overflow-x:auto;padding:10px}.logo,.sp{display:none}aside a{white-space:nowrap}.g4{grid-template-columns:1fr 1fr}.g3,.g2{grid-template-columns:1fr}}
 body{background-image:radial-gradient(900px 400px at 85% -10%,rgba(6,182,212,.14),transparent),radial-gradient(700px 400px at 0% 0%,rgba(124,58,237,.12),transparent);background-attachment:fixed}
 .card{transition:transform .2s,box-shadow .2s}.card:hover{box-shadow:0 6px 24px rgba(6,182,212,.12)}
@@ -98,6 +100,54 @@ a.hm-k:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(6,182,212,.15
 .hm-empty{color:var(--mut);font-size:13px;padding:6px 0}
 @media(max-width:900px){.hm-hero,.hm-g2{grid-template-columns:1fr}.hm-kg{grid-template-columns:1fr 1fr}.hm-big{font-size:36px}}
 @media(max-width:480px){.hm-kg{grid-template-columns:1fr}.hm-fin{grid-template-columns:1fr}}
+
+/* ===== Mobile responsiveness (phones & tablets) — desktop unchanged ===== */
+img,video,iframe{max-width:100%;height:auto}
+main{min-width:0;max-width:100%}
+.card{max-width:100%}
+.card>.tbl{display:block;overflow-x:auto;white-space:nowrap}
+.tbl{max-width:100%}
+@media(max-width:900px){
+ main{padding:12px}
+ .top{flex-wrap:wrap}
+ .top h1{font-size:18px}
+ .g4{grid-template-columns:1fr 1fr}
+ .hm-kg{grid-template-columns:1fr 1fr}
+ .hm-g2{grid-template-columns:1fr}
+ .kpi b{font-size:24px}
+ aside a{min-height:44px;display:flex;align-items:center;flex-shrink:0}
+}
+@media(max-width:600px){
+ .g4,.hm-kg{grid-template-columns:1fr 1fr;gap:10px}
+ .card{padding:12px;border-radius:12px}
+ .card h3{font-size:15px}
+ .top{padding:10px 12px}
+ .top p{font-size:12px}
+ .dn{flex-direction:column}
+ .gal{grid-template-columns:1fr 1fr}
+ .row{flex-wrap:wrap}
+ .upd{font-size:13px}
+}
+@media(max-width:480px){
+ main{padding:8px}
+ .kpi b{font-size:20px}
+ input,select,textarea{font-size:16px;max-width:100%}
+ form.f{flex-direction:column;align-items:stretch}
+ form.f>*{width:100%;min-width:0}
+ form.f input[type=text]{min-width:0}
+ .btn,button.pill,button.tg{min-height:42px}
+ .tbl th,.tbl td{padding:6px 4px;font-size:13px}
+ #md{place-items:end center}
+ #md .box{width:100vw;max-width:100vw;max-height:88dvh;overflow-y:auto;border-radius:16px 16px 0 0;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+ #lg{padding:12px}
+ #lg .box{padding:18px}
+ .lgc{padding:20px}
+ #toast{width:max-content;max-width:calc(100vw - 24px)}
+}
+@media(max-width:360px){
+ aside a{padding:9px 10px;font-size:14px}
+ .kpi b{font-size:18px}
+}
 </style>
 <style>html.bt #lg{visibility:hidden}</style></head>
 <body>
@@ -211,7 +261,7 @@ function dt(ts){var d=new Date(ts);return d.toISOString().slice(0,10)+" "+d.toTi
 function toast(m){var t=$("toast");t.textContent=m;t.style.display="block";clearTimeout(toast.h);toast.h=setTimeout(function(){t.style.display="none"},4500)}
 function seedData(){D.tasks=[];D.parts=B0.map(function(b,i){return{id:"p"+(i+10),n:b[0],q:b[1],u:b[2],s:i<9?1:0}})}
 /* data layer: shared db when available, local memory otherwise */
-function put(c,o){var id=o.id;if(db){var x={};for(var k in o)if(k!="id")x[k]=o[k];return db.collection(c).doc(id).set(x).catch(function(e){toast("تعذّر الحفظ: "+(e&&e.code||"")+"")})}var i=D[c].findIndex(function(z){return z.id==id});if(i<0)D[c].push(o);else D[c][i]=o;go();return Promise.resolve()}
+function put(c,o){var id=o.id;if(db){var x={};for(var k in o)if(k!="id")x[k]=o[k];return db.collection(c).doc(id).set(x).then(function(){return true}).catch(function(e){toast("تعذّر الحفظ: "+(e&&e.code||"")+"");return false})}var i=D[c].findIndex(function(z){return z.id==id});if(i<0)D[c].push(o);else D[c][i]=o;go();return Promise.resolve(true)}
 function rm(c,id){if(db)return db.collection(c).doc(id).delete();D[c]=D[c].filter(function(z){return z.id!=id});go();return Promise.resolve()}
 function act(t){put("logs",{id:"l"+Date.now()+Math.floor(Math.random()*99),w:(own&&me&&me!="المالك"?"المالك كـ "+me:me||"زائر"),t:t,ts:Date.now()})}
 function sub(c,seed){return db.collection(c).onSnapshot(function(sn){var a=sn.docs.map(function(d){var o=d.data();var r={id:d.id};for(var k in o)r[k]=o[k];return r});
@@ -362,9 +412,9 @@ async function doProof(id,v,retry){var p=D.parts.filter(function(x){return x.id=
   if(!r)return;
   await put("parts",Object.assign({},p,m,{s:v,img:up.id,note:r.why,h:h,pv:v,ap:"ai"}));act((v==1?"تم شراء «":"تم تنفيذ «")+p.n+"» — اعتمده الفحص الدقيق بالذكاء الاصطناعي ("+r.conf+"٪): "+r.why);RT=null;closeM();toast("تم الاعتماد ✓ "+r.why)}
  catch(e){bar(0);st("تعذّر: "+(e&&e.message||e&&e.code||e)+(RT&&RT.pid==id?" — الصورة محفوظة، يمكنك إعادة الفحص":""));$("pb").disabled=false;kept()}}
-async function addI(e){e.preventDefault();if(!need())return;var f=e.target,fl=f.f.files[0],id=null;
- try{if(fl){if(!SBR()){toast(NOUP);return}var er=await chkImg(fl);if(er){toast(er);return}id=(await upImg(fl,"updates")).id}}catch(x){toast("فشل رفع الصورة: "+(x&&x.message||""));return}
- put("inst",{id:"i"+Date.now(),w:me,t:f.t.value,img:id||"",ts:Date.now()});act("نشر تحديث تركيب: "+f.t.value);f.reset()}
+async function addI(e){e.preventDefault();if(!need())return;var f=e.target,fl=f.f.files[0],id=null,bt=f.querySelector("button");if(bt)bt.disabled=true;
+ try{if(fl){if(!SBR()){toast(NOUP);if(bt)bt.disabled=false;return}var er=await chkImg(fl);if(er){toast(er);if(bt)bt.disabled=false;return}id=(await upImg(fl,"updates")).id}}catch(x){toast("فشل رفع الصورة: "+(x&&x.message||""));if(bt)bt.disabled=false;return}
+ var ok=await put("inst",{id:"i"+Date.now(),w:me,t:f.t.value,img:id||"",ts:Date.now()});if(bt)bt.disabled=false;if(!ok)return;act("نشر تحديث تركيب: "+f.t.value);f.reset()}
 async function delI(id){if(!need())return;if(!confirm("حذف التحديث؟"))return;var r=D.inst.filter(function(x){return x.id==id})[0];if(r&&r.img){try{await delStored(r.img,true)}catch(x){toast("لم يُحذف التحديث: "+x.message);return}}rm("inst",id);act("حذف تحديث تركيب")}
 /* views */
 function cnt(){var c={d:0,p:0,n:0};D.tasks.forEach(function(t){c[t.s]++});return c}
@@ -406,6 +456,7 @@ function hmFeed(){
  D.parts.forEach(function(p){if(p.imts)a.push({w:p.imu,t:"رفع إثبات «"+p.n+"» — "+PS[p.s],ts:p.imts})});
  return a.sort(function(x,y){return y.ts-x.ts}).slice(0,10)}
 function hmGreet(){var g=new Date().getHours();return g<5?"طاب ليلك":g<12?"صباح الخير":g<18?"طاب يومك":"مساء الخير"}
+var HMAL=false;function hmAlT(){HMAL=!HMAL;go()}
 var V={
 home:function(){
  var tasks=D.tasks,n=tasks.length,c=cnt(),td=new Date().toISOString().slice(0,10),soonD=new Date(Date.now()+7*864e5).toISOString().slice(0,10),
@@ -449,8 +500,8 @@ home:function(){
  AL.sort(function(a,b){return lvl[a[0]]-lvl[b[0]]});
  var pb=np?pc(np-pcnt[0],np):0,pe=np?pc(pcnt[3],np):0;
  h+='<div class="hm-g2"><div class="card"><div class="hm-h"><h3>ما يحتاج إلى انتباهك</h3></div>'
-  +(AL.length?AL.map(function(a){var cl=a[0]=="n"?"s-n":"s-b",tx=a[0]=="n"?"حرج":"تنبيه";return'<div class="hm-t"><div>'+esc(a[1])+'</div><a class="pill '+cl+'" href="'+a[2]+'">'+tx+'</a></div>'}).join(""):'<div class="hm-empty">لا توجد تنبيهات حاليًا ✅</div>')
-  +'</div><div class="card"><div class="hm-h"><h3>رؤية المشروع</h3></div>'
+  +(AL.length?AL.slice(0,HMAL?AL.length:3).map(function(a){var cl=a[0]=="n"?"s-n":"s-b",tx=a[0]=="n"?"حرج":"تنبيه";return'<div class="hm-t"><div>'+esc(a[1])+'</div><a class="pill '+cl+'" href="'+a[2]+'">'+tx+'</a></div>'}).join(""):'<div class="hm-empty">لا توجد تنبيهات حاليًا ✅</div>')
+  +(AL.length>3?'<button class="btn g" style="margin-top:8px" onclick="hmAlT()">'+(HMAL?'عرض أقل':'عرض المزيد ('+fm(AL.length-3)+')')+'</button>':'')+'</div><div class="card"><div class="hm-h"><h3>رؤية المشروع</h3></div>'
   +[["إنجاز المهام",pr,"#2563eb"],["شراء المكونات",pb,"#f59e0b"],["تنفيذ المكونات",pe,"#22a06b"]].map(function(r){return'<div style="margin-bottom:10px"><div class="row"><span>'+r[0]+'</span><b>'+fm(r[1])+'٪</b></div><div class="hm-bar s"><i style="width:'+r[1]+'%;background:'+r[2]+'"></i></div></div>'}).join("")
   +'<div class="hm-fin"><div><span>المهام المتبقية</span><b>'+fm(n-c.d)+'</b></div><div><span>مكونات لم تُشترَ</span><b>'+fm(pcnt[0])+'</b></div></div></div></div>';
  /* stages */
@@ -475,11 +526,19 @@ home:function(){
  h+='<div class="card"><div class="hm-h"><h3>الملخص المالي</h3><a class="hm-lnk" href="#cost">صفحة التكاليف ←</a></div>'
   +(cf.total?'<div class="hm-fin">'+fb("الميزانية الكلية",fm(cf.total)+EG)+fb("المصروف الفعلي",fm(ac)+EG)+fb("المبالغ المدفوعة",fm(paid)+EG)+fb("غير المدفوعة",fm(due)+EG)+fb("المتبقي من الميزانية",fm(cf.total-ac)+EG)+fb("نسبة الاستهلاك",fm(ut)+"٪")+'</div><div class="hm-bar s" style="margin-top:12px"><i style="width:'+Math.min(100,ut)+'%;background:'+uc+'"></i></div>'+(ut>=100?'<div class="demo" style="border-color:#ef4444;background:rgba(239,68,68,.12)">🚨 تم تجاوز الميزانية الكلية</div>':ut>=80?'<div class="demo">⚠️ الصرف وصل '+fm(ut)+'٪ من الميزانية</div>':'')+(lg?'<p class="note" style="margin:8px 0 0">يشمل '+fm(lg)+EG+' من مكونات مُعلَّمة «تم الشراء» دون مصروف مرتبط.</p>':'')
    :'<div class="demo">لم يتم تحديد الميزانية'+(own?' — حدّدها من صفحة التكاليف.':' — يحددها المالك.')+'</div><div class="hm-fin" style="margin-top:10px">'+fb("المصروف الفعلي",fm(ac)+EG)+fb("غير المدفوعة",fm(due)+EG)+'</div>')+'</div></div>';
+ /* latest installation updates */
+ var ups=D.inst.slice().sort(function(a,b){return b.ts-a.ts}).slice(0,3);
+ h+='<div class="card"><div class="hm-h"><h3>آخر تحديثات التركيب</h3><a class="hm-lnk" href="#inst">عرض جميع التحديثات ←</a></div>'
+  +(ups.length?ups.map(function(x){var long=(x.t||"").length>140;
+    return'<div class="upd"><div><b>'+esc(x.w||"—")+'</b><small>'+dt(x.ts)+'</small></div>'
+     +(x.t?(long?'<details><summary class="hm-lnk">عرض النص كاملًا</summary>':'')+'<div class="hm-txt">'+esc(x.t)+'</div>'+(long?'</details>':''):'')
+     +(x.img?'<a href="'+su(x.img)+'" data-sp="'+esc(x.img)+'" target="_blank"><img src="'+su(x.img)+'" data-sp="'+esc(x.img)+'" alt="صورة التحديث" class="hm-ui"></a>':'')+'</div>'}).join(""):'<div class="hm-empty">لا توجد تحديثات بعد.</div>')
+  +'</div>';
  /* robot + activity */
  var fd=hmFeed();
  h+='<div class="hm-g2"><div class="card"><div class="hm-h"><h3>حالة الروبوت</h3><a class="hm-lnk" href="#robot">صفحة حالة الروبوت ←</a></div><div id="hm-rb">'+hmRobotHtml()+'</div></div>'
   +'<div class="card"><div class="hm-h"><h3>آخر النشاطات</h3>'+(own?'<a class="hm-lnk" href="#log">سجل الحركات ←</a>':'')+'</div>'
-  +(fd.length?fd.map(function(x){return'<div class="upd">'+esc(x.t)+'<small>'+esc(x.w||"—")+' · '+dt(x.ts)+'</small></div>'}).join(""):'<div class="hm-empty">لا توجد نشاطات بعد.</div>')+'</div></div>';
+  +(fd.length?fd.slice(0,3).map(function(x){return'<div class="upd">'+esc(x.t)+'<small>'+esc(x.w||"—")+' · '+dt(x.ts)+'</small></div>'}).join(""):'<div class="hm-empty">لا توجد نشاطات بعد.</div>')+'</div></div>';
  /* quick links */
  h+='<div class="card"><h3>اختصارات سريعة</h3><div class="hm-quick">'+[["tasks","📋","المهام"],["parts","🔩","المكونات"],["inst","🛠️","التركيب والتنفيذ"],["tests","🧪","الاختبارات"],["cost","💰","التكاليف"],["reports","📈","التقارير"],["robot","🤖","حالة الروبوت"]].map(function(q){return'<a href="#'+q[0]+'"><i>'+q[1]+'</i>'+q[2]+'</a>'}).join("")+'</div></div>';
  return h},
