@@ -173,6 +173,36 @@ main{min-width:0;max-width:100%}
 .ins-btns .btn:last-child{margin-inline-start:auto}
 .ins-btns .btn:disabled{opacity:.6;cursor:wait}
 @media(max-width:480px){.inst-grid{grid-template-columns:1fr}.ins-btns .btn{flex:1 1 auto;text-align:center}.ins-btns .btn:last-child{margin-inline-start:0;width:100%}}
+
+.tk-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tk-kpi{display:flex;gap:10px;align-items:center;background:var(--soft);border-radius:12px;padding:10px;min-width:0}
+.tk-kpi b{display:block;font-size:20px}.tk-kpi small{color:var(--mut);font-size:12px}
+.tk-ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:#fff;flex-shrink:0}
+.tk-bar{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.tk-filters{display:flex;flex-wrap:wrap;gap:8px}.tk-filters input[type=search]{flex:1 1 220px;min-width:0}
+.tk-views{display:flex;gap:8px;flex-wrap:wrap}
+.tk-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:var(--soft);margin-bottom:6px;width:100%;border:0;font:inherit;color:inherit;text-align:start;cursor:default}
+.tk-row small{display:block;color:var(--mut);font-size:12px}
+.tk-row.late{border-inline-start:4px solid #ef4444}.tk-row.soon{border-inline-start:4px solid #f59e0b}
+button.tk-mem{cursor:pointer}
+.tk-flag{font-size:11px;padding:2px 8px;border-radius:99px;white-space:nowrap}.tk-flag.late{background:#fde4e4;color:#c43c3c}.tk-flag.soon{background:#fff1d6;color:#9a6200}
+.tk-ph{border:1px solid var(--bd);border-radius:14px;background:var(--card);margin-bottom:12px;overflow:hidden}
+.tk-ph summary{display:flex;align-items:center;gap:10px;padding:14px;cursor:pointer;list-style:none}.tk-ph summary::-webkit-details-marker{display:none}
+.tk-pi{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:#fff;flex-shrink:0}
+.tk-pc{margin-inline-start:auto;color:var(--mut);font-size:13px;white-space:nowrap}
+.tk-pbody{padding:0 14px 14px}.tk-pst{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mut);margin-bottom:8px}
+.tk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:12px}
+.tk-card{background:var(--soft);border:1px solid var(--bd);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;border-inline-start:4px solid #94a3b8;min-width:0}
+.tk-card.tk-d{border-inline-start-color:#22a06b}.tk-card.tk-p{border-inline-start-color:#2563eb}.tk-card.is-late{border-inline-start-color:#ef4444}
+.tk-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.tk-top b{overflow-wrap:anywhere}
+.tk-meta{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:var(--mut)}
+.tk-desc{font-size:13px;color:var(--mut);overflow-wrap:anywhere}
+.tk-foot{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;margin-top:auto}
+.tk-sel{font:inherit;font-size:13px;padding:5px 8px;border-radius:9px;max-width:100%}
+.tk-acts{display:flex;gap:6px;flex-wrap:wrap}
+.tk-dl{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tk-dl span{display:block;color:var(--mut);font-size:12px}
+.tk-edit{display:flex;flex-direction:column;gap:10px}.tk-edit label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mut)}
+@media(max-width:480px){.tk-grid{grid-template-columns:1fr}.tk-dl{grid-template-columns:1fr}.tk-filters select{flex:1 1 45%}}
 </style>
 <style>html.bt #lg{visibility:hidden}</style></head>
 <body>
@@ -342,7 +372,7 @@ async function cycleT(id){if(!need())return;var t=D.tasks.filter(function(x){ret
  var n={d:"n",n:"p",p:"d"}[t.s],o=Object.assign({},t,{s:n});
  var ok=await put("tasks",o);if(!ok)return;act("غيّر حالة المهمة «"+t.n+"» إلى "+ST[n])}
 function delT(id){if(!need())return;var t=D.tasks.filter(function(x){return x.id==id})[0];if(!confirm("حذف المهمة؟"))return;rm("tasks",id);act("حذف المهمة «"+t.n+"»")}
-function addT(e){e.preventDefault();if(!need())return;var f=e.target,o={id:"t"+Date.now(),n:f.n.value,o:f.o.value,ph:+f.ph.value,s:"n",due:f.d.value||END};put("tasks",o);act("أضاف مهمة «"+o.n+"» في قسم "+PH[o.ph][0]);f.reset()}
+function addT(e){e.preventDefault();if(!need())return;var f=e.target,o={id:"t"+Date.now(),n:f.n.value,o:f.o.value,ph:+f.ph.value,s:"n",due:f.d.value||END,desc:(f.desc?f.desc.value:"").trim()};put("tasks",o);act("أضاف مهمة «"+o.n+"» في قسم "+PH[o.ph][0]);f.reset()}
 function setPart(id,v){var p=D.parts.filter(function(x){return x.id==id})[0];v=+v;
  if(!me){loginM();go();return}
  if(v==1||v==3){proofM(id,v);return}
@@ -494,6 +524,81 @@ function hmFeed(){
  D.parts.forEach(function(p){if(p.imts)a.push({w:p.imu,t:"رفع إثبات «"+p.n+"» — "+PS[p.s],ts:p.imts})});
  return a.sort(function(x,y){return y.ts-x.ts}).slice(0,10)}
 function hmGreet(){var g=new Date().getHours();return g<5?"طاب ليلك":g<12?"صباح الخير":g<18?"طاب يومك":"مساء الخير"}
+var TK={q:"",ph:"",o:"",s:"",f:"",sort:"due",view:"cards",open:{}};
+var TKI=["✏️","🔩","💻","🧪"];
+function tkDate(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function tkToday(){return tkDate(new Date())}
+function tkLate(t){return t.s!="d"&&!!t.due&&t.due<tkToday()}
+function tkSoon(t){if(t.s=="d"||!t.due||tkLate(t))return false;var l=new Date();l.setDate(l.getDate()+7);return t.due<=tkDate(l)}
+function tkFiltered(){var q=TK.q.trim().toLowerCase();
+ var l=D.tasks.filter(function(t){
+  if(q&&(t.n||"").toLowerCase().indexOf(q)<0)return false;
+  if(TK.ph!==""&&String(t.ph)!==String(TK.ph))return false;
+  if(TK.o!==""&&t.o!==TK.o)return false;
+  if(TK.s!==""&&t.s!==TK.s)return false;
+  if(TK.f=="late"&&!tkLate(t))return false;
+  if(TK.f=="done"&&t.s!="d")return false;
+  return true});
+ var cmp={due:function(a,b){return(a.due||"9999")<(b.due||"9999")?-1:1},
+  far:function(a,b){return(a.due||"")<(b.due||"")?1:-1},
+  late:function(a,b){return((tkLate(b)?1:0)-(tkLate(a)?1:0))||((a.due||"9999")<(b.due||"9999")?-1:1)},
+  name:function(a,b){return(a.n||"").localeCompare(b.n||"","ar")},
+  new:function(a,b){return(+String(b.id).replace(/\D/g,"")||0)-(+String(a.id).replace(/\D/g,"")||0)}};
+ return l.sort(cmp[TK.sort]||cmp.due)}
+async function tkSetStatus(id,n){if(!need())return;var t=D.tasks.filter(function(x){return x.id==id})[0];if(!t||t.s==n)return;
+ if(!canChangeT(t)){toast("غير مسموح لك بتغيير حالة هذه المهمة. التغيير متاح للشخص المسؤول عنها فقط");go();return}
+ var ok=await put("tasks",Object.assign({},t,{s:n}));if(!ok){go();return}act("غيّر حالة المهمة «"+t.n+"» إلى "+ST[n])}
+function tkCard(t){var late=tkLate(t),soon=tkSoon(t),can=canChangeT(t);
+ var flag=late?'<span class="tk-flag late">متأخرة</span>':soon?'<span class="tk-flag soon">موعدها قريب</span>':'';
+ var st=can?'<select class="tk-sel" onchange="tkSetStatus(\''+t.id+'\',this.value)" aria-label="الحالة">'+["n","p","d"].map(function(k){return'<option value="'+k+'"'+(k==t.s?' selected':'')+'>'+ST[k]+'</option>'}).join("")+'</select>':'<span class="pill s-'+t.s+'" title="التغيير للمسؤول عن المهمة فقط">'+ST[t.s]+'</span>';
+ return '<article class="tk-card tk-'+t.s+(late?' is-late':'')+'"><div class="tk-top"><b>'+esc(t.n)+'</b>'+flag+'</div>'
+  +'<div class="tk-meta"><span>👤 '+esc(t.o||NA)+'</span><span>🧩 '+esc(PH[t.ph]?PH[t.ph][0]:"—")+'</span><span>📅 '+esc(t.due||"—")+'</span></div>'
+  +(t.desc?'<div class="tk-desc">'+esc(t.desc)+'</div>':'')
+  +'<div class="tk-foot">'+st+'<span class="tk-acts"><button class="pill s-p" onclick="tkDetail(\''+t.id+'\')">تفاصيل</button>'+(me?'<button class="pill s-p" onclick="tkEdit(\''+t.id+'\')">تعديل</button><button class="pill s-n" onclick="delT(\''+t.id+'\')">حذف</button>':'')+'</span></div></article>'}
+function tkGrid(items){return items.length?'<div class="tk-grid">'+items.map(tkCard).join("")+'</div>':'<div class="hm-empty">لا توجد مهام مطابقة.</div>'}
+function tkTable(items){return items.length?'<div class="wrap"><table class="tbl"><tr><th>المهمة</th><th>المسؤول</th><th>الحالة</th><th>الاستحقاق</th>'+(me?'<th></th>':'')+'</tr>'+items.map(trow).join("")+'</table></div>':'<div class="hm-empty">لا توجد مهام مطابقة.</div>'}
+function tkStatsHtml(){var n=D.tasks.length,c=cnt(),late=D.tasks.filter(tkLate).length,pr=pc(c.d,n);
+ var k=function(ic,col,v,lab){return'<div class="tk-kpi"><span class="tk-ic" style="background:'+col+'">'+ic+'</span><div><b>'+fm(v)+'</b><small>'+lab+'</small></div></div>'};
+ return'<div class="tk-stats">'+k("📋","#0ea5e9",n,"إجمالي المهام")+k("✅","#22a06b",c.d,"مكتملة")+k("⏳","#2563eb",c.p,"قيد التنفيذ")+k("🕒","#64748b",c.n,"لم تبدأ")+k("🚨",late?"#ef4444":"#94a3b8",late,"متأخرة")+k("📈","#8b6cf0",pr,"نسبة الإنجاز ٪")+'</div><div class="bar" style="margin-top:12px"><i style="width:'+pr+'%"></i></div>'}
+function tkBar(){var sel=function(key,opts,cur){return'<select aria-label="'+key+'" onchange="tkF(\''+key+'\',this.value)">'+opts.map(function(o){return'<option value="'+esc(o[0])+'"'+(String(cur)===String(o[0])?' selected':'')+'>'+esc(o[1])+'</option>'}).join("")+'</select>'};
+ return'<div class="card tk-bar"><form class="tk-filters" onsubmit="return false"><input type="search" placeholder="🔍 ابحث باسم المهمة" value="'+esc(TK.q)+'" oninput="TK.q=this.value;tkList()">'
+  +sel("ph",[["","كل المراحل"]].concat(PH.map(function(p,i){return[i,p[0]]})),TK.ph)
+  +sel("o",[["","كل الأعضاء"]].concat(everyone().map(function(n){return[n,n]})),TK.o)
+  +sel("s",[["","كل الحالات"],["n","لم تبدأ"],["p","قيد التنفيذ"],["d","مكتملة"]],TK.s)
+  +sel("f",[["","كل المهام"],["late","المتأخرة فقط"],["done","المكتملة فقط"]],TK.f)
+  +sel("sort",[["due","الأقرب موعدًا"],["far","الأبعد موعدًا"],["late","المتأخرة أولًا"],["name","اسم المهمة"],["new","الأحدث"]],TK.sort)
+  +'<button type="button" class="btn g" onclick="tkReset()">إعادة تعيين الفلاتر</button></form>'
+  +'<div class="tk-views"><button type="button" class="btn'+(TK.view=="cards"?'':' g')+'" onclick="tkView(\'cards\')">عرض البطاقات</button><button type="button" class="btn'+(TK.view=="table"?'':' g')+'" onclick="tkView(\'table\')">عرض الجدول</button></div></div>'}
+function tkF(k,v){TK[k]=v;if(k=="f"||k=="ph"||k=="o"||k=="s"||k=="sort")tkList()}
+function tkView(v){TK.view=v;go()}
+function tkReset(){TK.q="";TK.ph="";TK.o="";TK.s="";TK.f="";TK.sort="due";go()}
+function tkSetO(n){TK.o=n;go()}
+function tkFollow(){var l=D.tasks.filter(function(t){return tkLate(t)||tkSoon(t)}).sort(function(a,b){return(tkLate(b)?1:0)-(tkLate(a)?1:0)||((a.due||"9")<(b.due||"9")?-1:1)});
+ return'<div class="card"><h3>🔔 تحتاج إلى متابعة</h3>'+(l.length?l.slice(0,8).map(function(t){var lt=tkLate(t);return'<div class="tk-row '+(lt?'late':'soon')+'"><div>'+esc(t.n)+'<small>'+esc(t.o||NA)+' · '+esc(t.due||"—")+'</small></div><span class="tk-flag '+(lt?'late':'soon')+'">'+(lt?'متأخرة':'قريبة')+'</span></div>'}).join("")+(l.length>8?'<p class="note">و'+fm(l.length-8)+' مهام أخرى — استخدم الفلاتر لعرضها.</p>':''):'<div class="hm-empty">لا توجد مهام تحتاج متابعة الآن.</div>')+'</div>'}
+function tkMembers(){var rows=everyone().filter(function(n){return n!=NA}).map(function(n){var l=D.tasks.filter(function(t){return t.o===n}),d=l.filter(function(t){return t.s=="d"}).length;return{n:n,total:l.length,p:l.filter(function(t){return t.s=="p"}).length,late:l.filter(tkLate).length,d:d}}).filter(function(r){return r.total>0});
+ return'<div class="card"><h3>توزيع المهام على الفريق</h3>'+(rows.length?rows.map(function(r){return'<button type="button" class="tk-row tk-mem" data-n="'+esc(r.n)+'" onclick="tkSetO(this.dataset.n)"><div>'+esc(r.n)+'<small>'+fm(r.d)+' مكتملة · '+fm(r.p)+' قيد التنفيذ · '+fm(r.late)+' متأخرة</small></div><span class="pill s-p">'+fm(pc(r.d,r.total))+'٪</span></button>'}).join(""):'<div class="hm-empty">لا توجد مهام مسندة بعد.</div>')+'</div>'}
+function tkPhases(){var list=tkFiltered();return PH.map(function(p,i){var all=D.tasks.filter(function(t){return t.ph==i}),d=all.filter(function(t){return t.s=="d"}).length,pn=all.filter(function(t){return t.s=="p"}).length,nn=all.filter(function(t){return t.s=="n"}).length,pr=pc(d,all.length),items=list.filter(function(t){return t.ph==i}),open=TK.open[i]!==false;
+ return'<details class="tk-ph"'+(open?' open':'')+' ontoggle="TK.open['+i+']=this.open"><summary><span class="tk-pi" style="background:'+p[1]+'">'+TKI[i]+'</span><b>'+esc(p[0])+'</b><span class="tk-pc">'+fm(d)+' / '+fm(all.length)+' · '+fm(pr)+'٪</span></summary><div class="tk-pbody"><div class="tk-pst"><span>قيد التنفيذ: '+fm(pn)+'</span><span>لم تبدأ: '+fm(nn)+'</span><span>الإنجاز: '+fm(pr)+'٪</span></div><div class="bar s"><i style="width:'+pr+'%;background:'+p[1]+'"></i></div>'+(TK.view=="table"?tkTable(items):tkGrid(items))+'</div></details>'}).join("")}
+function tkBody(){return tkFollow()+tkPhases()+tkMembers()}
+function tkList(){var b=$("tk-body");if(b)b.innerHTML=tkBody()}
+function tkDetail(id){var t=D.tasks.filter(function(x){return x.id==id})[0];if(!t)return;
+ var lg=D.logs.filter(function(l){return l.t&&l.t.indexOf("«"+t.n+"»")>=0}).sort(function(a,b){return b.ts-a.ts})[0];
+ modal('<h3 style="margin:0">'+esc(t.n)+'</h3><div class="tk-dl"><div><span>المسؤول</span><b>'+esc(t.o||NA)+'</b></div><div><span>المرحلة</span><b>'+esc(PH[t.ph]?PH[t.ph][0]:"—")+'</b></div><div><span>الحالة</span><b>'+ST[t.s]+(tkLate(t)?' — متأخرة':'')+'</b></div><div><span>تاريخ الاستحقاق</span><b>'+esc(t.due||"—")+'</b></div></div>'+(t.desc?'<p class="tk-dsc">'+esc(t.desc)+'</p>':'')+'<p class="note">'+(lg?'آخر إجراء: '+esc(lg.t)+' · '+esc(lg.w||"—")+' · '+dt(lg.ts):'لا يوجد إجراء مسجّل لهذه المهمة')+'</p><div class="row"><button class="btn g" onclick="closeM()">إغلاق</button></div>')}
+function tkEdit(id){var t=D.tasks.filter(function(x){return x.id==id})[0];if(!t||!need())return;
+ modal('<h3 style="margin:0">تعديل المهمة</h3><form class="tk-edit" onsubmit="tkSave(event,\''+t.id+'\')">'
+  +'<label>اسم المهمة<input name="n" required value="'+esc(t.n)+'"></label>'
+  +'<label>المرحلة<select name="ph">'+PH.map(function(p,i){return'<option value="'+i+'"'+(i==t.ph?' selected':'')+'>'+esc(p[0])+'</option>'}).join("")+'</select></label>'
+  +'<label>المسؤول<select name="o">'+[NA].concat(everyone()).map(function(m){return'<option'+(m==t.o?' selected':'')+'>'+esc(m)+'</option>'}).join("")+'</select></label>'
+  +'<label>تاريخ الاستحقاق<input type="date" name="due" value="'+esc(t.due||"")+'"></label>'
+  +'<label>وصف (اختياري)<textarea name="desc" rows="3">'+esc(t.desc||"")+'</textarea></label>'
+  +'<div class="row"><button class="btn" type="submit">حفظ التعديلات</button><button class="btn g" type="button" onclick="closeM()">إلغاء</button></div></form>')}
+async function tkSave(e,id){e.preventDefault();if(!need())return;var f=e.target,t=D.tasks.filter(function(x){return x.id==id})[0];if(!t){toast("المهمة غير موجودة");return}
+ var n=f.n.value.trim(),ph=+f.ph.value,o=f.o.value,due=f.due.value||"",desc=f.desc.value.trim();
+ if(!n){toast("اسم المهمة مطلوب");return}
+ var ch=[];if(n!=t.n)ch.push("الاسم");if(ph!=t.ph)ch.push("المرحلة");if(o!=t.o)ch.push("المسؤول");if(due!=(t.due||""))ch.push("تاريخ الاستحقاق");if(desc!=(t.desc||""))ch.push("الوصف");
+ if(!ch.length){closeM();return}
+ var ok=await put("tasks",Object.assign({},t,{n:n,ph:ph,o:o,due:due,desc:desc}));if(!ok)return;
+ act("عدّل المهمة «"+n+"»: "+ch.join("، "));closeM();toast("تم حفظ التعديلات")}
 var IMGF=null,IMGU=null,INSTT="";
 function instPick(inp){var f=inp.files&&inp.files[0];if(!f)return;var fm2=inp.closest("form");if(fm2&&fm2.t)INSTT=fm2.t.value;if(IMGU)URL.revokeObjectURL(IMGU);IMGF=f;IMGU=URL.createObjectURL(f);go()}
 function instClr(){var fm2=document.querySelector("#v form.ins-f");if(fm2)INSTT=fm2.t.value;if(IMGU)URL.revokeObjectURL(IMGU);IMGF=null;IMGU=null;go()}
@@ -586,9 +691,13 @@ home:function(){
  /* quick links */
  h+='<div class="card"><h3>اختصارات سريعة</h3><div class="hm-quick">'+[["tasks","📋","المهام"],["parts","🔩","المكونات"],["inst","🛠️","التركيب والتنفيذ"],["tests","🧪","الاختبارات"],["cost","💰","التكاليف"],["reports","📈","التقارير"],["robot","🤖","حالة الروبوت"]].map(function(q){return'<a href="#'+q[0]+'"><i>'+q[1]+'</i>'+q[2]+'</a>'}).join("")+'</div></div>';
  return h},
-tasks:function(){var h='';if(me)h+='<div class="card"><h3>إضافة مهمة (للفريق فقط)</h3><form class="f" onsubmit="addT(event)"><select name="ph">'+PH.map(function(p,i){return '<option value="'+i+'">'+p[0]+'</option>'}).join("")+'</select><input type="text" name="n" placeholder="اسم المهمة" required><select name="o">'+[NA].concat(everyone()).map(function(m){return '<option>'+esc(m)+'</option>'}).join("")+'</select><input type="date" name="d"><button class="btn">إضافة</button></form></div>';
+tasks:function(){var h='';
+ h+=tkStatsHtml()&&'<div class="card"><h3>لوحة المهام</h3>'+tkStatsHtml()+'</div>';
+ h+=tkBar();
+ if(me)h+='<div class="card"><h3>إضافة مهمة (للفريق فقط)</h3><form class="f" onsubmit="addT(event)"><select name="ph">'+PH.map(function(p,i){return '<option value="'+i+'">'+p[0]+'</option>'}).join("")+'</select><input type="text" name="n" placeholder="اسم المهمة" required><select name="o">'+[NA].concat(everyone()).map(function(m){return '<option>'+esc(m)+'</option>'}).join("")+'</select><input type="text" name="desc" placeholder="وصف (اختياري)"><input type="date" name="d"><button class="btn">إضافة</button></form></div>';
  else h+='<div class="card row"><span class="note">تسجيل الدخول بكلمة سر الفريق مطلوب لإضافة المهام أو تغيير حالتها.</span><button class="btn" onclick="loginM()">دخول الفريق</button></div>';
- PH.forEach(function(p,i){var l=D.tasks.filter(function(t){return t.ph==i});h+='<div class="card"><div class="ph"><i style="background:'+p[1]+'"></i><b>'+p[0]+'</b><span class="note">('+fm(l.filter(function(t){return t.s=="d"}).length)+' من '+fm(l.length)+' مكتملة)</span></div><div class="wrap"><table class="tbl"><tr><th>المهمة</th><th>المسؤول</th><th>الحالة</th><th>الاستحقاق</th>'+(me?'<th></th>':'')+'</tr>'+l.map(trow).join("")+'</table></div></div>'});return h},
+ h+='<div id="tk-body">'+tkBody()+'</div>';
+ return h},
 parts:function(){var c=[0,0,0,0];D.parts.forEach(function(p){c[p.s]++});
  return '<div class="card"><h3>المكونات ('+fm(D.parts.length)+' بند)</h3><p class="note">'+PS.map(function(s,i){return s+': '+fm(c[i])}).join(" · ")+'<br>لاختيار «تم الشراء» أو «تم التنفيذ» لازم ترفع صورة إثبات (فاتورة أو المكوّن)، ويفحصها الذكاء الاصطناعي ويعتمدها (وإذا تعذّر الفحص تقنيًا يمكن الاعتماد المبدئي حسب الشكل).</p><div class="wrap"><table class="tbl"><tr><th>البند</th><th>الكمية</th><th>الحالة</th><th>الإثبات</th></tr>'+D.parts.map(function(p){return '<tr><td>'+esc(p.n)+'</td><td>'+fm(p.q)+'</td><td><select onchange="setPart(\''+p.id+'\',this.value)" class="pill '+PC[p.s]+'" '+(me?'':'')+'>'+PS.map(function(s,i){return '<option value="'+i+'"'+(i==p.s?" selected":"")+'>'+s+'</option>'}).join("")+'</select></td><td>'+(p.img?'<a href="'+su(p.img)+'" data-sp="'+esc(p.img)+'" target="_blank"><img class="th" src="'+su(p.img)+'" data-sp="'+esc(p.img)+'" alt=""></a><br>'+apB(p)+'<span class="note"> '+esc(p.note)+'</span><br>'+(p.ap=="tech"||p.ap=="rej"?'<a href="#" class="note" onclick="proofM(\''+p.id+'\','+(p.pv||(p.s==3||p.s==2?3:1))+');return false">اعتماد مبدئي</a> · ':'')+'<a href="#" class="note" onclick="proofM(\''+p.id+'\','+(p.s==3||p.s==2?3:1)+');return false">استبدال</a> · <a href="#" class="note" onclick="delImg(\''+p.id+'\');return false">حذف</a>':'')+'</td></tr>'}).join("")+'</table></div></div>'},
 inst:function(){var l=D.inst.slice().sort(function(a,b){return b.ts-a.ts});
