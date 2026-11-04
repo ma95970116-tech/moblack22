@@ -801,7 +801,7 @@ cost:function(){var c=cfg(),L=fx(),paid=D.exp.reduce(function(a,e){return a+paid
  h+='<div class="grid g2"><div class="card"><h3>المصروفات حسب الفئة</h3>'+bars(Object.keys(bc).map(function(n){return[n,bc[n]]}),"#06b6d4")+'</div><div class="card"><h3>المصروفات الشهرية</h3>'+bars(Object.keys(mo).sort().map(function(n){return[n,mo[n]]}),"#7c3aed")+'</div><div class="card"><h3>الميزانية مقابل المدفوع (حسب الفئة)</h3>'+(c.list.filter(function(n){return c.cats[n]}).map(function(n){var a=L.filter(function(e){return e.c==n}).reduce(function(s,e){return s+paidOf(e)},0);return'<div class="upd">'+esc(n)+' <small>'+fm(a)+' من '+fm(c.cats[n])+EG+'</small><div class="bar"><i style="width:'+Math.min(100,pc(a,c.cats[n]))+'%;background:'+(a>c.cats[n]?"#ef4444":"#2563eb")+'"></i></div></div>'}).join("")||'<p class="note">حدّد ميزانيات الفئات لتظهر المقارنة.</p>')+'</div><div class="card"><h3>المدفوع مقابل غير المدفوع</h3>'+bars([["مدفوع",tp,"#22c55e"],["غير مدفوع",tu,"#f59e0b"]])+'</div></div><div class="card"><h3>أغلى 5 مصروفات</h3>'+bars(L.slice().sort(function(a,b){return totOf(b)-totOf(a)}).slice(0,5).map(function(e){return[e.n,totOf(e)]}),"#06b6d4")+'</div>';
  var cp=D.parts.filter(function(p){return p.qb>0});h+='<div class="card"><h3>مشتريات المكونات (من المصروفات المرتبطة)</h3>'+(cp.length?'<div class="wrap"><table class="tbl"><tr><th>المكوّن</th><th>المطلوب</th><th>المُشترى</th><th>المتبقي</th><th>تكلفة الشراء</th></tr>'+cp.map(function(p){return'<tr><td>'+esc(p.n)+'</td><td>'+fm(p.q)+'</td><td>'+fm(p.qb)+'</td><td>'+fm(Math.max(0,p.q-p.qb))+'</td><td>'+fm(p.pc)+EG+'</td></tr>'}).join("")+'</table></div>':'<p class="note">اربط مصروفًا بمكوّن من نافذة الإضافة ليظهر هنا.</p>')+'</div>';
  if(own)h+='<div class="card"><h3>السجل المالي</h3>'+(D.logs.filter(function(l){return l.t.indexOf("💰")==0}).sort(function(a,b){return b.ts-a.ts}).slice(0,15).map(function(l){return'<div class="upd">'+esc(l.t)+'<small>'+dt(l.ts)+' · '+esc(l.w)+'</small></div>'}).join("")||'<p class="note">لا توجد حركات مالية بعد.</p>')+'</div>';
- return mcPanel()+h},
+ return finPanel()+mcPanel()+h},
 costOld:function(){var T=D.parts.reduce(function(a,p){return a+p.q*p.u},0),Sp=D.parts.reduce(function(a,p){return a+(p.s>0?p.q*p.u:0)},0);
  return '<div class="grid g4"><div class="card kpi"><div><span>الميزانية الكلية</span><b>'+fm(T)+'</b><span>جنيه مصري</span></div></div><div class="card kpi"><div><span>تم صرفه</span><b>'+fm(Sp)+'</b><span>'+fm(pc(Sp,T))+'٪</span></div></div><div class="card kpi"><div><span>المتبقي</span><b>'+fm(T-Sp)+'</b><span>جنيه مصري</span></div></div></div><div class="card"><h3>التكاليف حسب البند</h3><div class="wrap"><table class="tbl"><tr><th>البند</th><th>الكمية × السعر</th><th>الإجمالي</th><th style="width:28%">النسبة</th></tr>'+D.parts.map(function(p){var t=p.q*p.u;return '<tr><td>'+esc(p.n)+'</td><td>'+fm(p.q)+' × '+fm(p.u)+'</td><td>'+fm(t)+'</td><td><div class="bar"><i style="width:'+Math.min(100,pc(t,T)*2.5)+'%;background:#2563eb"></i></div></td></tr>'}).join("")+'</table></div></div>'},
 reports:function(){var m=["سبت","أكت","نوف","ديس","يناير","فبر","مارس","أبريل","مايو"],pl=[0,12,25,38,52,66,80,92,100],ac=[0,pc(cnt().d,D.tasks.length)],W=620,H=240,x=function(i){return 40+i*(W-60)/8},y=function(v){return H-30-v*(H-60)/100};
@@ -1021,19 +1021,6 @@ if(!D.mcost)D.mcost=[];
 var MCS=false,CM={q:"",sort:"rem"},MC_EXCL=["م. دعاء","د. محمود محروس"],MC_SUPS=["السيد عبداللاه السيد","محمد علي عنتر جلال","محمد ناصر عبدالحميد","رامز طارق محمد","م. دعاء","د. محمود محروس"];
 function isCostAdmin(){return !!own||MC_SUPS.indexOf(me)>=0}
 /* أسعار المكونات: مصدرها مجموعة prices وتُدمج في بيانات المكونات قبل كل عرض */
-function mergePrices(){if(!D.prices||!D.prices.length)return;var M={};D.prices.forEach(function(x){M[x.id]=x});D.parts.forEach(function(p){if(M[p.id]!==undefined)p.u=M[p.id].u})}
-function priceCell(p){
- if(!me)return '<span class="note">للفريق فقط</span>';
- var v=p.u==null||p.u===""?null:+p.u;
- if(!isCostAdmin())return v==null?'<span class="note">لم يُحدَّد</span>':fm(v)+EG;
- return '<span class="row" style="gap:4px;flex-wrap:nowrap"><input id="pr_'+p.id+'" type="number" min="0" step="any" value="'+(v==null?"":v)+'" placeholder="السعر" style="width:96px"><button class="pill s-p" onclick="setPrice(\''+p.id+'\')">حفظ</button></span>'}
-function setPrice(id){
- if(!isCostAdmin()){toast("تعديل الأسعار للمشرفين فقط");return}
- var el=$("pr_"+id),raw=el?el.value.trim():"",u=raw===""?null:Number(raw);
- if(u!==null&&(!isFinite(u)||u<0)){toast("أدخل سعرًا صحيحًا (صفر أو أكبر)");return}
- var p=D.parts.filter(function(x){return x.id==id})[0];if(!p)return;
- put("prices",{id:id,u:u,by:me||"",ts:Date.now()});
- act("💲 حدّد سعر «"+p.n+"» "+(u==null?"(بدون سعر)":"إلى "+fm(u)+EG));toast("تم حفظ السعر ✓")}
 
 /* مساهمات الأعضاء: مجموعة mcost، مستند لكل عضو */
 function mcMembers(){return MEM.filter(function(n){return MC_EXCL.indexOf(n)<0})}
@@ -1137,6 +1124,224 @@ function mcPanel(){
  +'<div class="wrap"><table class="tbl"><thead><tr><th>العضو</th><th>المطلوب</th><th>المدفوع</th><th>المتبقي</th><th>الحالة</th></tr></thead><tbody id="mc-body">'+mcRows()+'</tbody></table></div>'
  +'<p class="note" style="margin-top:8px">اضغط على اسم العضو لعرض التفاصيل وسجل الدفعات.'+(isCostAdmin()?'':' التعديل متاح للمشرفين فقط.')+'</p></div>'}
 
+/* ===== الميزانية والفئات (مرتبطة بالتكاليف والمكونات) ===== */
+if(!D.bhist)D.bhist=[];
+var FSUB=false,FB={from:"",to:""},CATQ="",BKL={set:"تعيين",add:"إيداع",wd:"سحب",cat:"ميزانية فئة"};
+var CAT_SUG=["المكونات الإلكترونية","المتحكمات ووحدات المعالجة","الحساسات وأجهزة القياس","المحركات وأنظمة الحركة","البطاريات ومصادر الطاقة","الهيكل والتصنيع والطباعة ثلاثية الأبعاد","الأسلاك والتوصيلات والإكسسوارات","البرمجة والبرمجيات","أدوات الاختبار والصيانة","النقل والشحن","مصروفات أخرى"];
+var CAT_DESC={"المكونات الإلكترونية":"المكونات والدوائر الإلكترونية الأساسية","المتحكمات ووحدات المعالجة":"لوحات ESP32 وغيرها من المتحكمات","الحساسات وأجهزة القياس":"حساسات العوائق والحواف وأجهزة القياس","المحركات وأنظمة الحركة":"المحركات والعجلات ودرايفرات التحكم","البطاريات ومصادر الطاقة":"البطاريات ووحدات الشحن ومنظمات الجهد","الهيكل والتصنيع والطباعة ثلاثية الأبعاد":"ألواح الهيكل والطباعة ثلاثية الأبعاد","الأسلاك والتوصيلات والإكسسوارات":"الأسلاك والموصلات ومواد التثبيت","البرمجة والبرمجيات":"التراخيص والخدمات البرمجية","أدوات الاختبار والصيانة":"أدوات القياس والصيانة والاختبار","النقل والشحن":"تكاليف النقل والشحن والتوصيل","مصروفات أخرى":"أي مصروف لا يندرج تحت فئة أخرى"};
+
+function needAdmin(m){if(!isCostAdmin()){toast(m||"هذا الإجراء للمشرفين فقط");return false}return true}
+function mcNum2(v){var s=String(v==null?"":v).trim();if(s==="")return NaN;var n=Number(s);return isFinite(n)?n:NaN}
+function inFB(d){return(!FB.from||(d||"")>=FB.from)&&(!FB.to||(d||"")<=FB.to)}
+function catsDoc(){return D.cfg.filter(function(x){return x.id=="cats"})[0]||{}}
+function catDescMap(){return catsDoc().desc||{}}
+function catsSave(list,desc,t){put("cfg",{id:"cats",list:list,desc:desc||catDescMap()});if(t)act(t)}
+function pCat(p){return p.cat||"مصروفات أخرى"}
+function linkedP(id){return D.exp.some(function(e){return e.pid==id})}
+
+/* الأسعار والفئة لكل مكوّن: تُحفظ في مجموعة prices (محمية بالصلاحيات) */
+function mergePrices(){if(!D.prices||!D.prices.length)return;var M={};D.prices.forEach(function(x){M[x.id]=x});D.parts.forEach(function(p){if(M[p.id]){p.u=M[p.id].u;if(M[p.id].cat)p.cat=M[p.id].cat}})}
+function partPut(id,patch){var p=D.parts.filter(function(x){return x.id==id})[0];if(!p)return;
+ var o={id:id,u:p.u==null?null:p.u,cat:pCat(p)};
+ put("prices",Object.assign(o,patch,{by:me||"",ts:Date.now()}))}
+function priceCell(p){
+ if(!me)return '<span class="note">للفريق فقط</span>';
+ var v=p.u==null||p.u===""?null:+p.u,cat=pCat(p);
+ if(!isCostAdmin())return (v==null?'<span class="note">لم يُحدَّد</span>':fm(v)+EG)+'<br><span class="note">'+esc(cat)+'</span>';
+ var opts=cfg().list.map(function(n){return'<option'+(n==cat?' selected':'')+'>'+esc(n)+'</option>'}).join("");
+ return '<div class="row" style="gap:4px;flex-wrap:wrap"><input id="pr_'+p.id+'" type="number" min="0" step="any" value="'+(v==null?"":v)+'" placeholder="السعر" style="width:90px"><button class="pill s-p" onclick="setPrice(\''+p.id+'\')">حفظ</button></div><select style="margin-top:4px;max-width:200px" onchange="partCat(\''+p.id+'\',this.value)">'+opts+'</select>'}
+function setPrice(id){
+ if(!needAdmin("تعديل الأسعار للمشرفين فقط"))return;
+ var el=$("pr_"+id),raw=el?el.value.trim():"",u=raw===""?null:Number(raw);
+ if(u!==null&&(!isFinite(u)||u<0)){toast("أدخل سعرًا صحيحًا (صفر أو أكبر)");return}
+ var p=D.parts.filter(function(x){return x.id==id})[0];if(!p)return;
+ partPut(id,{u:u});act("💲 حدّد سعر «"+p.n+"» "+(u==null?"(بدون سعر)":"إلى "+fm(u)+EG));toast("تم حفظ السعر ✓")}
+function partCat(id,v){
+ if(!needAdmin("تغيير فئة المكونات للمشرفين فقط"))return;
+ var p=D.parts.filter(function(x){return x.id==id})[0];if(!p)return;
+ partPut(id,{cat:v});act("غيّر فئة «"+p.n+"» إلى «"+v+"»")}
+
+/* حساب الفئات: المكوّن المرتبط بمصروف يُحسب من المصروف فقط، فلا يُحسب مرتين */
+function catCalc(){
+ var C=cfg(),M={},desc=catDescMap();
+ function g(n){if(!M[n])M[n]={n:n,b:+C.cats[n]||0,spent:0,committed:0,cnt:0,d:desc[n]||""};return M[n]}
+ C.list.forEach(g);
+ D.exp.forEach(function(e){var c=g(e.c||"مصروفات أخرى");c.spent+=paidOf(e);c.committed+=totOf(e);c.cnt++});
+ D.parts.forEach(function(p){if(linkedP(p.id))return;var c=g(pCat(p)),v=(+p.q||0)*(+p.u||0);c.committed+=v;if(p.s>0)c.spent+=v;c.cnt++});
+ return C.list.map(function(n){return M[n]}).concat(Object.keys(M).filter(function(n){return C.list.indexOf(n)<0}).map(function(n){return M[n]}))}
+
+/* الميزانية: كل تغيير يُسجَّل مع السبب والمشرف، ولا يُحذف شيء */
+function budApplyVal(nv,k,n){
+ var cur=+cfg().total||0;
+ put("cfg",{id:"budget",total:nv,cats:cfg().cats});
+ put("bhist",{id:"bh"+Date.now()+Math.floor(Math.random()*99),k:k,prev:cur,now:nv,a:nv-cur,n:n||"",by:me||"",ts:Date.now()});
+ act("💰 "+BKL[k]+" الميزانية من "+fm(cur)+EG+" إلى "+fm(nv)+EG+(n?" — "+n:""))}
+function setBudget(){
+ if(!needAdmin("تعديل الميزانية للمشرفين فقط"))return;
+ var raw=$("bt")?$("bt").value:"",v=Number(raw);
+ if(raw===""||!isFinite(v)||v<0){toast("أدخل مبلغًا صحيحًا");return}
+ budApplyVal(v,"set","تعيين الميزانية الإجمالية");toast("تم حفظ الميزانية ✓")}
+function budOpen(){
+ if(!needAdmin("إدارة الميزانية للمشرفين فقط"))return;
+ modal('<h3 style="margin:0">تعديل الميزانية</h3><p class="note">الميزانية الحالية: '+fm(+cfg().total||0)+EG+'</p>'
+ +'<select id="bo_k"><option value="add">إيداع (زيادة)</option><option value="wd">سحب (تقليل)</option><option value="set">تعيين قيمة جديدة</option></select>'
+ +'<input id="bo_a" type="number" min="0" step="any" placeholder="المبلغ (ج.م)">'
+ +'<input id="bo_n" placeholder="السبب (إلزامي)">'
+ +'<div class="row"><button class="btn" onclick="budApply()">تنفيذ</button><button class="btn g" onclick="closeM()">إلغاء</button></div>')}
+function budApply(){
+ if(!needAdmin("إدارة الميزانية للمشرفين فقط"))return;
+ var k=$("bo_k").value,a=mcNum2($("bo_a").value),n=$("bo_n").value.trim(),cur=+cfg().total||0;
+ if(!n){toast("اكتب سبب العملية");return}
+ if(isNaN(a)||a<0||(k!="set"&&a<=0)){toast("أدخل مبلغًا صحيحًا");return}
+ var nv=k=="add"?cur+a:k=="wd"?cur-a:a;
+ var spent=catCalc().reduce(function(s,c){return s+c.spent},0);
+ if(nv<0){toast("لا يمكن أن تكون الميزانية أقل من صفر");return}
+ if(nv<spent){toast("لا يمكن تقليل الميزانية إلى أقل من المصروف الفعلي ("+fm(spent)+EG+")");return}
+ budApplyVal(nv,k,n);closeM();toast("تم تسجيل العملية ✓")}
+function setCB(cat,v){
+ if(!needAdmin("تعديل ميزانيات الفئات للمشرفين فقط"))return;
+ if(!(+v>=0)){toast("قيمة غير صحيحة");return}
+ var c=Object.assign({},cfg().cats),old=+c[cat]||0;c[cat]=+v;
+ put("cfg",{id:"budget",total:cfg().total,cats:c});
+ put("bhist",{id:"bh"+Date.now()+Math.floor(Math.random()*99),k:"cat",prev:old,now:+v,a:+v-old,n:"ميزانية فئة «"+cat+"»",by:me||"",ts:Date.now()});
+ act("💰 عدّل ميزانية فئة «"+cat+"» إلى "+fm(+v)+EG)}
+
+/* الفئات: إضافة، تعديل، حذف مع نقل العمليات */
+function addCat(){
+ if(!needAdmin("إدارة الفئات للمشرفين فقط"))return;
+ var n=$("nc").value.trim(),L=cfg().list;
+ if(!n||/[.\/\[\]*~`]/.test(n)){toast("اسم فئة غير صالح");return}
+ if(L.indexOf(n)>=0){toast("الفئة موجودة");return}
+ catsSave(L.concat([n]),null,"💰 أضاف فئة «"+n+"»");toast("تمت إضافة الفئة ✓")}
+function catsAddSug(){
+ if(!needAdmin("إدارة الفئات للمشرفين فقط"))return;
+ var L=cfg().list,miss=CAT_SUG.filter(function(n){return L.indexOf(n)<0});
+ if(!miss.length){toast("كل الفئات المقترحة موجودة بالفعل");return}
+ var d=Object.assign({},catDescMap());miss.forEach(function(n){if(!d[n])d[n]=CAT_DESC[n]||""});
+ catsSave(L.concat(miss),d,"💰 أضاف الفئات المقترحة الناقصة ("+miss.length+")");toast("تمت إضافة "+miss.length+" فئة ✓")}
+function catUse(n){return D.exp.filter(function(e){return (e.c||"مصروفات أخرى")==n}).length+D.parts.filter(function(p){return pCat(p)==n}).length}
+function catEdit(i){
+ if(!needAdmin("إدارة الفئات للمشرفين فقط"))return;
+ var n=cfg().list[i];if(!n)return;var c=catCalc().filter(function(x){return x.n==n})[0]||{d:""};
+ modal('<h3 style="margin:0">تعديل الفئة</h3>'
+ +'<input id="ce_n" value="'+esc(n)+'" placeholder="اسم الفئة">'
+ +'<input id="ce_d" value="'+esc(c.d||"")+'" placeholder="وصف مختصر">'
+ +'<p class="note">تغيير الاسم يُطبَّق على المصروفات والمكونات المرتبطة بالفئة.</p>'
+ +'<div class="row"><button class="btn" onclick="catSaveEdit('+i+')">حفظ</button><button class="btn g" onclick="closeM()">إلغاء</button></div>')}
+function catSaveEdit(i){
+ if(!needAdmin("إدارة الفئات للمشرفين فقط"))return;
+ var L=cfg().list,old=L[i],nn=$("ce_n").value.trim(),nd=$("ce_d").value.trim();
+ if(!nn||/[.\/\[\]*~`]/.test(nn)){toast("اسم فئة غير صالح");return}
+ if(nn!=old&&L.indexOf(nn)>=0){toast("يوجد فئة بهذا الاسم");return}
+ if(nn!=old){
+  D.exp.filter(function(e){return e.c==old}).forEach(function(e){put("exp",Object.assign({},e,{c:nn}))});
+  D.parts.filter(function(p){return pCat(p)==old}).forEach(function(p){partPut(p.id,{cat:nn})});
+  var c=Object.assign({},cfg().cats);if(c[old]!==undefined){c[nn]=c[old];delete c[old]}
+  put("cfg",{id:"budget",total:cfg().total,cats:c});
+ }
+ var d=Object.assign({},catDescMap());if(nn!=old)delete d[old];d[nn]=nd;
+ var NL=L.slice();NL[i]=nn;
+ catsSave(NL,d,"💰 عدّل فئة «"+old+"»"+(nn!=old?" إلى «"+nn+"»":""));closeM();toast("تم حفظ الفئة ✓")}
+function delCat(i){
+ if(!needAdmin("إدارة الفئات للمشرفين فقط"))return;
+ var L=cfg().list,n=L[i];if(!n)return;
+ var used=catUse(n);
+ if(!used){if(!confirm("حذف الفئة «"+n+"»؟"))return;catsSave(L.filter(function(x,j){return j!=i}),null,"💰 حذف فئة «"+n+"»");return}
+ var opts=L.filter(function(x){return x!=n}).map(function(x){return'<option>'+esc(x)+'</option>'}).join("");
+ modal('<h3 style="margin:0">حذف الفئة «'+esc(n)+'»</h3><p class="note">مرتبطة بـ '+fm(used)+' عنصر (مصروفات ومكونات). اختر فئة لنقلها إليها أولًا:</p>'
+ +'<select id="cm_t">'+opts+'</select>'
+ +'<div class="row"><button class="btn" onclick="catMoveDo('+i+')">نقل وحذف</button><button class="btn g" onclick="closeM()">إلغاء</button></div>')}
+function catMoveDo(i){
+ if(!needAdmin("إدارة الفئات للمشرفين فقط"))return;
+ var L=cfg().list,n=L[i],t=$("cm_t").value;if(!n||!t)return;
+ D.exp.filter(function(e){return (e.c||"مصروفات أخرى")==n}).forEach(function(e){put("exp",Object.assign({},e,{c:t}))});
+ D.parts.filter(function(p){return pCat(p)==n}).forEach(function(p){partPut(p.id,{cat:t})});
+ catsSave(L.filter(function(x,j){return j!=i}),null,"💰 حذف فئة «"+n+"» ونقل عناصرها إلى «"+t+"»");closeM();toast("تم النقل والحذف ✓")}
+
+/* التقارير والتصدير */
+function finMonthly(){var m={};D.exp.forEach(function(e){if(!inFB(e.d))return;var k=(e.d||"").slice(0,7);if(!k)return;m[k]=(m[k]||0)+paidOf(e)});return Object.keys(m).sort().map(function(k){return[k,m[k]]})}
+function finExp(fmt){
+ if(!me){loginM();return}
+ if(fmt=="pdf"){finPdf();return}
+ if(!window.XLSX){toast("مكتبة Excel لم تُحمَّل، تحقق من الاتصال");return}
+ var cats=catCalc(),W=XLSX.utils.book_new();W.Workbook={Views:[{RTL:true}]};
+ function sh(n,rows){var ws=XLSX.utils.aoa_to_sheet(rows);ws["!cols"]=rows[0].map(function(){return{wch:24}});XLSX.utils.book_append_sheet(W,ws,n)}
+ sh("الفئات",[["الفئة","الوصف","الميزانية","المصروف","المتبقي","عدد العناصر"]].concat(cats.map(function(c){return[c.n,c.d,c.b,c.spent,c.b-c.spent,c.cnt]})));
+ sh("المصروفات",[["المصروف","الفئة","الإجمالي","المدفوع","التاريخ","المورد"]].concat(D.exp.filter(function(e){return inFB(e.d)}).map(function(e){return[e.n,e.c||"",totOf(e),paidOf(e),e.d||"",e.s||""]})));
+ sh("سجل الميزانية",[["التاريخ","النوع","قبل","بعد","الفرق","السبب","بواسطة"]].concat(D.bhist.slice().sort(function(a,b){return b.ts-a.ts}).map(function(h){return[dt(h.ts),BKL[h.k]||h.k,h.prev,h.now,h.a,h.n,h.by]})));
+ saveFile(bkName("budget","xlsx"),new Blob([XLSX.write(W,{bookType:"xlsx",type:"array"})],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
+ act("صدّر الميزانية والفئات إلى Excel")}
+function finPdf(){
+ var cats=catCalc(),C=cfg(),total=+C.total||0,spent=cats.reduce(function(s,c){return s+c.spent},0);
+ var E=function(v){return esc(v==null?"":v)};
+ var tb=function(h,rows){return rows.length?'<table><thead><tr>'+h.map(function(x){return'<th>'+x+'</th>'}).join("")+'</tr></thead><tbody>'+rows.map(function(r){return'<tr>'+r.map(function(c){return'<td>'+c+'</td>'}).join("")+'</tr>'}).join("")+'</tbody></table>':'<p>لا توجد بيانات.</p>'};
+ var css='body{font-family:Tahoma,Arial,sans-serif;color:#0f1b3d;margin:0;padding:28px;direction:rtl}h1{font-size:22px;margin:0}h2{font-size:16px;margin:20px 0 8px;border-bottom:1px solid #e3e8f2;padding-bottom:6px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border-bottom:1px solid #e3e8f2;padding:6px;text-align:right}th{background:#f5f7fb;color:#6b7794;font-weight:500}.bt{margin-bottom:14px}.bt button{font:inherit;padding:8px 16px;border-radius:8px;border:0;background:#2563eb;color:#fff;cursor:pointer;margin-left:8px}.meta{color:#6b7794;font-size:13px}@media print{.bt{display:none}}@page{size:A4;margin:14mm}';
+ var html='<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تقرير الميزانية والفئات</title><style>'+css+'</style></head><body>'
+ +'<div class="bt"><button onclick="window.print()">طباعة</button><button onclick="window.print()">حفظ كـ PDF</button></div>'
+ +'<h1>تقرير الميزانية والفئات</h1><div class="meta">تاريخ الإصدار: '+dt(Date.now())+(FB.from||FB.to?' — الفترة (للمصروفات): '+E(FB.from||"البداية")+' إلى '+E(FB.to||"اليوم"):'')+'</div>'
+ +'<h2>الملخص</h2>'+tb(["البند","القيمة"],[["الميزانية الإجمالية",fm(total)+EG],["المصروف الفعلي",fm(spent)+EG],["المتبقي من الميزانية",fm(total-spent)+EG],["نسبة الاستهلاك",(total?pc(spent,total):0)+"٪"],["إجمالي تكلفة المكونات",fm(D.parts.reduce(function(a,p){return a+(+p.q||0)*(+p.u||0)},0))+EG]])
+ +'<h2>الفئات</h2>'+tb(["الفئة","الميزانية","المصروف","المتبقي","الاستهلاك","عدد العناصر"],cats.map(function(c){return[E(c.n),fm(c.b)+EG,fm(c.spent)+EG,fm(c.b-c.spent)+EG,(c.b?pc(c.spent,c.b):0)+"٪",fm(c.cnt)]}))
+ +'<h2>سجل الميزانية</h2>'+tb(["التاريخ","النوع","قبل","بعد","السبب","بواسطة"],D.bhist.slice().sort(function(a,b){return b.ts-a.ts}).map(function(h){return[dt(h.ts),BKL[h.k]||h.k,fm(h.prev),fm(h.now),E(h.n),E(h.by)]}))
+ +'</body></html>';
+ var w=window.open("","_blank");if(!w){toast("اسمح بالنوافذ المنبثقة لعرض التقرير");return}
+ w.document.open();w.document.write(html);w.document.close()}
+
+/* لوحة الميزانية والفئات */
+function finRows(){
+ var adm=isCostAdmin(),L=cfg().list,q=(CATQ||"").trim();
+ var rows=catCalc().filter(function(c){return !q||c.n.indexOf(q)>=0});
+ if(!rows.length)return '<tr><td colspan="7" class="note">لا توجد فئات تطابق البحث.</td></tr>';
+ return rows.map(function(c){var idx=L.indexOf(c.n),pct=c.b?pc(c.spent,c.b):0,col=c.b&&c.spent>=c.b?'#ef4444':(c.b&&pct>=80?'#f59e0b':'#22a06b');
+  return '<tr><td><b>'+esc(c.n)+'</b><br><span class="note">'+esc(c.d||"—")+'</span></td>'
+  +'<td>'+(adm&&idx>=0?'<input type="number" min="0" step="any" value="'+c.b+'" style="width:110px" onchange="setCB(\''+c.n+'\',this.value)">':fm(c.b)+EG)+'</td>'
+  +'<td>'+fm(c.spent)+EG+'</td><td>'+fm(c.b-c.spent)+EG+'</td><td>'+fm(c.cnt)+'</td>'
+  +'<td style="min-width:120px"><div class="bar"><i style="width:'+Math.min(100,pct)+'%;background:'+col+'"></i></div><span class="note">'+(c.b?pct+'٪':'—')+'</span></td>'
+  +(adm?'<td style="white-space:nowrap">'+(idx>=0?'<button class="pill s-p" onclick="catEdit('+idx+')">تعديل</button> <button class="pill s-n" onclick="delCat('+idx+')">حذف</button>':'')+'</td>':'')+'</tr>'}).join("")}
+function finBody(){var e=$("fin-cats");if(e)e.innerHTML=finRows()}
+function finPanel(){
+ if(db&&me&&!FSUB){FSUB=true;sub("bhist")}
+ if(!me)return lock("الميزانية والفئات متاحة لأعضاء الفريق بعد تسجيل الدخول.","loginM()","دخول الفريق");
+ var C=cfg(),cats=catCalc(),adm=isCostAdmin(),total=+C.total||0;
+ var M=mcMembers(),req=0,col=0,nd=0;
+ M.forEach(function(n){var m=mcOf(n);col+=mcPaid(m);if(m.due==null)nd++;else req+=m.due});
+ var toColl=req-col,est=D.parts.reduce(function(a,p){return a+(+p.q||0)*(+p.u||0)},0);
+ var spent=cats.reduce(function(s,c){return s+c.spent},0),remB=total-spent,useP=total?pc(spent,total):0,colP=req?Math.min(100,pc(col,req)):0;
+ var sumB=cats.reduce(function(s,c){return s+c.b},0);
+ var K=function(l,v,s){return'<div class="card kpi"><div><span>'+l+'</span><b>'+v+'</b><span>'+(s||"")+'</span></div></div>'};
+ var al='';
+ if(total&&spent>total)al+='<div class="demo" style="border-color:#ef4444;background:rgba(239,68,68,.12)">🚨 المصروف الفعلي تجاوز الميزانية الإجمالية بمقدار '+fm(spent-total)+EG+'</div>';
+ else if(useP>=80)al+='<div class="demo">⚠️ تم استهلاك '+useP+'٪ من الميزانية الإجمالية</div>';
+ var over=cats.filter(function(c){return c.b>0&&c.spent>=c.b}),near=cats.filter(function(c){return c.b>0&&c.spent<c.b&&c.spent>=c.b*0.8});
+ if(over.length)al+='<div class="demo" style="border-color:#ef4444;background:rgba(239,68,68,.12)">🚨 فئات تجاوزت ميزانيتها: '+over.map(function(c){return esc(c.n)}).join("، ")+'</div>';
+ if(near.length)al+='<div class="demo">⚠️ فئات قاربت على استهلاك ميزانيتها: '+near.map(function(c){return esc(c.n)}).join("، ")+'</div>';
+ if(total&&sumB>total)al+='<div class="demo">⚠️ مجموع ميزانيات الفئات ('+fm(sumB)+EG+') أكبر من الميزانية الإجمالية</div>';
+ if(nd)al+='<div class="demo">⚠️ '+fm(nd)+' عضو لم يُحدَّد لهم المطلوب بعد، فأرقام التحصيل لا تشملهم.</div>';
+ var h='<div class="card"><h3>الميزانية والفئات</h3>'+al
+ +(!total&&!D.exp.length&&!D.parts.length?'<p class="note">لا توجد بيانات مالية بعد. حدّد الميزانية الإجمالية وأضف مكونات أو مصروفات لتظهر الأرقام.</p>':'')
+ +'<div class="grid g4" style="margin-top:12px">'+K("الميزانية الإجمالية",fm(total),EG)+K("إجمالي تكلفة المكونات",fm(est),EG)+K("المصروف الفعلي",fm(spent),EG)+K("المتبقي من الميزانية",fm(remB),EG)+'</div>'
+ +'<div class="grid g4" style="margin-top:12px">'+K("نسبة استهلاك الميزانية",useP+"٪","")+K("المحصّل من الفريق",fm(col),EG)+K("المطلوب من الفريق",fm(req),EG)+K("المتبقي للتحصيل",fm(toColl),EG)+'</div>'
+ +'<div style="margin-top:12px"><div class="row"><span class="note">نسبة التحصيل من الفريق</span><b>'+colP+'٪</b></div><div class="bar"><i style="width:'+colP+'%"></i></div></div>'
+ +'<p class="note" style="margin-top:8px">المحصّل من الفريق مبالغ فعلية، والمطلوب منهم التزامات لا تُحتسب كأموال موجودة. المتبقي من الميزانية = الإجمالية − المصروف الفعلي.</p></div>';
+ h+='<div class="card"><div class="row" style="flex-wrap:wrap"><h3 style="margin:0">سجل الميزانية</h3>'+(adm?'<button class="btn" onclick="budOpen()">إيداع / سحب / تعيين</button>':'')+'</div>'
+ +(adm?'':'<p class="note">تعديل الميزانية للمشرفين فقط.</p>')
+ +(adm?'<div class="row" style="flex-wrap:wrap;margin:10px 0"><input id="bt" type="number" min="0" step="any" placeholder="الميزانية الإجمالية (ج.م)" value="'+(total||"")+'"><button class="btn g" onclick="setBudget()">تعيين مباشر (بدون سبب)</button></div>':'')
+ +(D.bhist.length?'<div class="wrap"><table class="tbl"><tr><th>التاريخ</th><th>النوع</th><th>قبل</th><th>بعد</th><th>الفرق</th><th>السبب</th><th>بواسطة</th></tr>'+D.bhist.slice().sort(function(a,b){return b.ts-a.ts}).slice(0,50).map(function(x){return'<tr><td>'+dt(x.ts)+'</td><td>'+(BKL[x.k]||x.k)+'</td><td>'+fm(x.prev)+'</td><td>'+fm(x.now)+'</td><td>'+(x.a>0?'+':'')+fm(x.a)+'</td><td>'+esc(x.n||"—")+'</td><td>'+esc(x.by||"—")+'</td></tr>'}).join("")+'</table></div>':'<p class="note">لا توجد تعديلات مسجّلة بعد.</p>')
+ +'</div>';
+ h+='<div class="card"><h3>الفئات</h3>'
+ +(adm?'<div class="row" style="flex-wrap:wrap;margin-bottom:10px"><input id="nc" placeholder="اسم فئة جديدة"><button class="btn" onclick="addCat()">إضافة فئة</button><button class="btn g" onclick="catsAddSug()">إضافة الفئات المقترحة الناقصة</button></div>':'')
+ +'<div class="row" style="margin-bottom:10px"><input type="search" placeholder="🔍 ابحث باسم الفئة" value="'+esc(CATQ)+'" oninput="CATQ=this.value;finBody()" style="flex:1"></div>'
+ +'<div class="wrap"><table class="tbl"><thead><tr><th>الفئة</th><th>الميزانية</th><th>المصروف</th><th>المتبقي</th><th>عدد العناصر</th><th>الاستهلاك</th>'+(adm?'<th></th>':'')+'</tr></thead><tbody id="fin-cats">'+finRows()+'</tbody></table></div>'
+ +'<p class="note" style="margin-top:8px">المكونات المرتبطة بمصروف تُحسب من المصروف، وغير المرتبطة من سعرها. عند حذف فئة فيها عناصر يجب نقلها إلى فئة أخرى أولًا.</p></div>';
+ var mx=finMonthly(),ch=cats.filter(function(c){return c.b>0}).map(function(c){return[c.n,c.b]});
+ h+='<div class="card"><div class="row" style="flex-wrap:wrap"><h3 style="margin:0">التقارير والرسوم</h3><div class="row" style="flex-wrap:wrap"><label class="note">من <input type="date" value="'+FB.from+'" onchange="FB.from=this.value;go()"></label><label class="note">إلى <input type="date" value="'+FB.to+'" onchange="FB.to=this.value;go()"></label></div></div>'
+ +'<div class="grid g2" style="margin-top:12px"><div class="card"><h3>توزيع الميزانية على الفئات</h3>'+bars(ch,"#2563eb")+'</div>'
+ +'<div class="card"><h3>أكثر الفئات استهلاكًا</h3>'+bars(cats.slice().sort(function(a,b){return b.spent-a.spent}).slice(0,5).map(function(c){return[c.n,c.spent]}),"#f59e0b")+'</div></div>'
+ +'<div class="grid g2" style="margin-top:12px"><div class="card"><h3>إجمالي المصروفات الشهرية</h3>'+bars(mx,"#06b6d4")+'</div>'
+ +'<div class="card"><h3>المحصّل من الفريق مقابل المصروف الفعلي</h3>'+bars([["المحصّل من الفريق",col],["المصروف الفعلي",spent]],"#22c55e")+'</div></div>'
+ +'<div class="row" style="flex-wrap:wrap;margin-top:12px"><button class="btn" onclick="finExp(\'xlsx\')">تصدير Excel</button><button class="btn g" onclick="finExp(\'pdf\')">تصدير PDF</button></div>'
+ +'<p class="note" style="margin-top:8px">الفترة الزمنية تُطبّق على المصروفات والتقرير الشهري والتصدير.</p></div>';
+ return h}
+
 var LB=false;
 function lclr(){var m=$("le");if(m){m.className="lgm";m.textContent=""}["lu","lp"].forEach(function(i){var e=$(i);if(e)e.classList.remove("bad")})}
 function lerr(id,msg){var m=$("le"),c=document.querySelector(".lgc");m.className="lgm er";m.textContent=msg;if(id)$(id).classList.add("bad");if(c){c.classList.remove("shake");void c.offsetWidth;c.classList.add("shake")}if(id)$(id).focus()}
@@ -1167,20 +1372,16 @@ function qf(m){var t=new Date(),d=function(x){return x.toISOString().slice(0,10)
 function bars(rows,col){var mx=Math.max.apply(null,rows.map(function(r){return r[1]}).concat([1]));return rows.length?rows.map(function(r){return'<div class="upd">'+esc(r[0])+' <small>'+fm(r[1])+EG+'</small><div class="bar"><i style="width:'+Math.round(r[1]/mx*100)+'%;background:'+(r[2]||col)+'"></i></div></div>'}).join(""):'<p class="note">لا توجد بيانات في هذه الفترة.</p>'}
 function syncParts(ids,o){ids.forEach(function(pid){if(!pid)return;var p=D.parts.filter(function(x){return x.id==pid})[0];if(!p)return;var l=D.exp.filter(function(e){return e.id!=o.id}).concat(o._del?[]:[o]).filter(function(e){return e.pid==pid});put("parts",Object.assign({},p,{qb:l.reduce(function(a,e){return a+e.q},0),pc:l.reduce(function(a,e){return a+totOf(e)},0)}))})}
 function xt(){$("x_t").textContent=fm((+$("x_q").value||0)*(+$("x_u").value||0))+EG}
-function expM(id){if(!need())return;EI=id||null;EXC=null;var e=id?D.exp.filter(function(x){return x.id==id})[0]:{q:1,u:"",st:"u",d:new Date().toISOString().slice(0,10)},c=cfg();
+function expM(id){if(!need())return;if(!needAdmin('تسجيل المصروفات للمشرفين فقط'))return;EI=id||null;EXC=null;var e=id?D.exp.filter(function(x){return x.id==id})[0]:{q:1,u:"",st:"u",d:new Date().toISOString().slice(0,10)},c=cfg();
  modal('<h3 style="margin:0">'+(id?"تعديل مصروف":"إضافة مصروف")+'</h3><div style="max-height:68vh;overflow:auto;display:flex;flex-direction:column;gap:8px"><input id="x_n" placeholder="اسم المصروف" value="'+esc(e.n||"")+'"><select id="x_c">'+c.list.concat(e.c&&c.list.indexOf(e.c)<0?[e.c]:[]).map(function(n){return'<option'+(n==e.c?" selected":"")+'>'+esc(n)+'</option>'}).join("")+'</select><input id="x_q" type="number" min="1" step="any" oninput="xt()" placeholder="الكمية" value="'+(e.q||"")+'"><input id="x_u" type="number" min="0" step="any" oninput="xt()" placeholder="سعر الوحدة (ج.م)" value="'+(e.u===""?"":e.u)+'"><div class="note">الإجمالي = الكمية × السعر: <b id="x_t">'+fm((e.q||0)*(+e.u||0))+EG+'</b></div><input id="x_d" type="date" value="'+esc(e.d||"")+'"><input id="x_s" placeholder="اسم المورد" value="'+esc(e.s||"")+'"><input id="x_m" placeholder="طريقة الدفع (نقدًا، تحويل…)" value="'+esc(e.m||"")+'"><select id="x_st">'+Object.keys(SL).map(function(k){return'<option value="'+k+'"'+(k==e.st?" selected":"")+'>'+SL[k]+'</option>'}).join("")+'</select><input id="x_pa" type="number" min="0" step="any" placeholder="المبلغ المدفوع (للدفع الجزئي)" value="'+(e.st=="h"?e.pa:"")+'"><select id="x_pid"><option value="">غير مرتبط بمكوّن</option>'+D.parts.map(function(p){return'<option value="'+p.id+'"'+(p.id==e.pid?" selected":"")+'>'+esc(p.n)+'</option>'}).join("")+'</select><textarea id="x_nt" rows="2" placeholder="ملاحظات">'+esc(e.nt||"")+'</textarea><label class="note">فاتورة / إيصال (صورة)</label><div ondragover="event.preventDefault()" ondrop="event.preventDefault();dropF(event,\'x_f\',\'x_pv\')"><input id="x_f" type="file" accept="image/jpeg,image/png,image/webp" onchange="prevF(this,\'x_pv\')"><div class="note">JPG / PNG / WEBP — الحد الأقصى '+fm(UP.max)+' ميجا (يمكنك سحب الصورة وإفلاتها هنا)</div></div><img id="x_pv" alt="" style="display:none;max-width:100%;max-height:180px;border-radius:10px"><button class="btn g" type="button" onclick="aiInv()">تحليل الفاتورة بالذكاء الاصطناعي</button><div id="x_ai" class="note"></div>'+(e.img?'<div class="note">المرفق الحالي: <a href="'+su(e.img)+'" data-sp="'+esc(e.img)+'" target="_blank">عرض</a> · <a href="#" onclick="delExpImg();return false">حذف المرفق</a> — اختيار صورة جديدة يستبدله</div>':'')+'</div><div class="row"><button class="btn" id="x_b" onclick="saveE()">حفظ</button><button class="btn g" onclick="closeM()">إلغاء</button></div>')}
-async function saveE(){var q=+$("x_q").value,u=$("x_u").value,n=$("x_n").value.trim(),d=$("x_d").value,st=$("x_st").value,pa=+$("x_pa").value;
+async function saveE(){if(!needAdmin('تسجيل المصروفات للمشرفين فقط'))return;var q=+$("x_q").value,u=$("x_u").value,n=$("x_n").value.trim(),d=$("x_d").value,st=$("x_st").value,pa=+$("x_pa").value;
  if(!n){toast("اكتب اسم المصروف");return}if(!(q>0)){toast("الكمية يجب أن تكون أكبر من صفر");return}if(u===""||!(+u>=0)){toast("أدخل سعر وحدة صحيحًا");return}if(!d){toast("اختر تاريخ الشراء");return}
  if(st=="h"&&!(pa>0&&pa<q*u)){toast("المبلغ المدفوع جزئيًا يجب أن يكون أكبر من صفر وأقل من الإجمالي");return}
  var old=EI?D.exp.filter(function(x){return x.id==EI})[0]:null,o={id:EI||"e"+Date.now(),n:n,c:$("x_c").value,q:q,u:+u,d:d,s:$("x_s").value.trim(),m:$("x_m").value.trim(),st:st,pa:st=="h"?pa:0,pid:$("x_pid").value,nt:$("x_nt").value.trim(),img:old&&old.img||"",ts:old&&old.ts||Date.now(),w:old&&old.w||me},f=$("x_f").files[0],b=$("x_b");b.disabled=true;
  try{if(old)["h","imf","imt","ims","imu","imts","ai"].forEach(function(k){if(old[k]!==undefined&&o[k]===undefined)o[k]=old[k]});if(f){var er=await chkImg(f);if(er){toast(er);b.disabled=false;return}var kk=await kind(f),hh=await sha2(f),du=D.exp.filter(function(x){return x.id!=o.id&&x.h==hh})[0]||D.parts.filter(function(x){return x.h==hh})[0];if(du){toast("هذه الصورة مرفوعة من قبل، ارفع صورة مختلفة");b.disabled=false;return}toast("جاري رفع الصورة…");var up=await upImg(f,"invoices");if(old&&old.img){await delStored(old.img)}o.img=up.id;o.h=hh;o.imf=f.name||"";o.imt=kk;o.ims=f.size;o.imu=me||"";o.imts=Date.now()}if(EXC)o.ai=EXC;await put("exp",o);syncParts([old&&old.pid,o.pid],o)}catch(x){toast("تعذّر الحفظ: "+(x&&x.message||""));b.disabled=false;return}
  act("💰 "+(old?"عدّل مصروف «"+n+"»"+(old.st!=st?" — حالة الدفع: "+SL[st]:"")+(totOf(old)!=q*u?" — الإجمالي: "+fm(q*u)+EG:""):"أضاف مصروف «"+n+"» بقيمة "+fm(q*u)+EG));closeM();toast("تم الحفظ ✓")}
-async function delE(id){if(!need())return;var e=D.exp.filter(function(x){return x.id==id})[0];if(e&&e.img&&confirm("حذف المصروف «"+e.n+"» وصورته المرتبطة؟ لا يمكن التراجع.")){try{await delStored(e.img,true)}catch(x){toast("لم يُحذف المصروف: "+x.message);return}rm("exp",id);syncParts([e.pid],{id:id,_del:1});act("💰 حذف مصروف «"+e.n+"» بقيمة "+fm(totOf(e))+EG);return}if(!e||!confirm("حذف المصروف «"+e.n+"»؟ لا يمكن التراجع."))return;rm("exp",id);syncParts([e.pid],{id:id,_del:1});act("💰 حذف مصروف «"+e.n+"» بقيمة "+fm(totOf(e))+EG)}
+async function delE(id){if(!needAdmin('حذف المصروفات للمشرفين فقط'))return;var e=D.exp.filter(function(x){return x.id==id})[0];if(e&&e.img&&confirm("حذف المصروف «"+e.n+"» وصورته المرتبطة؟ لا يمكن التراجع.")){try{await delStored(e.img,true)}catch(x){toast("لم يُحذف المصروف: "+x.message);return}rm("exp",id);syncParts([e.pid],{id:id,_del:1});act("💰 حذف مصروف «"+e.n+"» بقيمة "+fm(totOf(e))+EG);return}if(!e||!confirm("حذف المصروف «"+e.n+"»؟ لا يمكن التراجع."))return;rm("exp",id);syncParts([e.pid],{id:id,_del:1});act("💰 حذف مصروف «"+e.n+"» بقيمة "+fm(totOf(e))+EG)}
 function detE(id){var e=D.exp.filter(function(x){return x.id==id})[0],p=D.parts.filter(function(x){return x.id==e.pid})[0];modal('<h3 style="margin:0">'+esc(e.n)+'</h3><div class="note" style="line-height:1.9">الفئة: '+esc(e.c)+'<br>الكمية × السعر: '+fm(e.q)+' × '+fm(e.u)+' = <b>'+fm(totOf(e))+EG+'</b><br>التاريخ: '+esc(e.d)+'<br>المورد: '+esc(e.s||"—")+'<br>طريقة الدفع: '+esc(e.m||"—")+'<br>الحالة: '+SL[e.st]+' — المدفوع '+fm(paidOf(e))+EG+'، المتبقي '+fm(totOf(e)-paidOf(e))+EG+'<br>المكوّن: '+(p?esc(p.n):"غير مرتبط")+'<br>ملاحظات: '+esc(e.nt||"—")+'<br>سجّله: '+esc(e.w||"—")+'</div>'+(e.img?'<a href="'+su(e.img)+'" data-sp="'+esc(e.img)+'" target="_blank"><img src="'+su(e.img)+'" data-sp="'+esc(e.img)+'" alt="" style="max-width:100%;border-radius:10px"></a>':'<p class="note">لا يوجد مرفق.</p>')+'<div class="row"><button class="btn g" onclick="closeM()">إغلاق</button></div>')}
-function setBudget(){if(!own){toast("تعديل الميزانية للمالك فقط");return}var v=+$("bt").value;if(!(v>=0)||$("bt").value===""){toast("أدخل مبلغًا صحيحًا");return}put("cfg",{id:"budget",total:v,cats:cfg().cats});act("💰 عدّل الميزانية الكلية إلى "+fm(v)+EG)}
-function setCB(cat,v){if(!own){toast("تعديل الميزانية للمالك فقط");return}if(!(+v>=0)){toast("قيمة غير صحيحة");return}var c=Object.assign({},cfg().cats);c[cat]=+v;put("cfg",{id:"budget",total:cfg().total,cats:c});act("💰 عدّل ميزانية فئة «"+cat+"» إلى "+fm(+v)+EG)}
-function addCat(){if(!own){toast("إدارة الفئات للمالك فقط");return}var n=$("nc").value.trim(),l=cfg().list;if(!n||/[.\/\[\]*~`]/.test(n)){toast("اسم فئة غير صالح");return}if(l.indexOf(n)>=0){toast("الفئة موجودة");return}put("cfg",{id:"cats",list:l.concat([n])});act("💰 أضاف فئة «"+n+"»")}
-function delCat(i){if(!own)return;var l=cfg().list,n=l[i];if(D.exp.some(function(e){return e.c==n})){toast("لا يمكن حذف فئة عليها مصروفات (حفاظًا على السجلات)");return}if(!confirm("حذف الفئة «"+n+"»؟"))return;put("cfg",{id:"cats",list:l.filter(function(x,j){return j!=i})});act("💰 حذف فئة «"+n+"»")}
 function exportFin(){if(!me)return;if(!window.XLSX){toast("مكتبة Excel لم تُحمَّل");return}var W=XLSX.utils.book_new(),E='#,##0 "EGP"',c=cfg();W.Workbook={Views:[{RTL:true}]};
  var r1=[["المصروف","الفئة","الكمية","سعر الوحدة","الإجمالي","التاريخ","المورد","طريقة الدفع","الحالة","المدفوع","المتبقي","ملاحظات"]].concat(D.exp.map(function(e,i){var r=i+2;return[e.n,e.c,e.q,{t:"n",v:e.u,z:E},{t:"n",v:totOf(e),f:"C"+r+"*D"+r,z:E},e.d,e.s,e.m,SL[e.st],{t:"n",v:paidOf(e),z:E},{t:"n",v:totOf(e)-paidOf(e),f:"E"+r+"-J"+r,z:E},e.nt]})),n=D.exp.length+1;r1.push(["الإجمالي","","","",{t:"n",v:D.exp.reduce(function(a,e){return a+totOf(e)},0),f:"SUM(E2:E"+n+")",z:E},"","","","",{t:"n",v:D.exp.reduce(function(a,e){return a+paidOf(e)},0),f:"SUM(J2:J"+n+")",z:E},{t:"n",v:D.exp.reduce(function(a,e){return a+totOf(e)-paidOf(e)},0),f:"SUM(K2:K"+n+")",z:E},""]);
  var s1=XLSX.utils.aoa_to_sheet(r1);s1["!cols"]=r1[0].map(function(){return{wch:20}});XLSX.utils.book_append_sheet(W,s1,"المصروفات");
