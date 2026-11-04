@@ -340,7 +340,7 @@ function seedData(){D.tasks=[];D.parts=B0.map(function(b,i){return{id:"p"+(i+10)
 /* data layer: shared db when available, local memory otherwise */
 function put(c,o){var id=o.id;if(db){var x={};for(var k in o)if(k!="id")x[k]=o[k];return db.collection(c).doc(id).set(x).then(function(){return true}).catch(function(e){toast("تعذّر الحفظ: "+(e&&e.code||"")+"");return false})}var i=D[c].findIndex(function(z){return z.id==id});if(i<0)D[c].push(o);else D[c][i]=o;go();return Promise.resolve(true)}
 function rm(c,id){if(db)return db.collection(c).doc(id).delete();D[c]=D[c].filter(function(z){return z.id!=id});go();return Promise.resolve()}
-function act(t){put("logs",{id:"l"+Date.now()+Math.floor(Math.random()*99),w:(own&&me&&me!="المالك"?"المالك كـ "+me:me||"زائر"),t:t,ts:Date.now()})}
+function act(t){put("logs",{id:"l"+Date.now()+Math.floor(Math.random()*99),w:(own&&me&&me!="المالك"?"المسئول كـ "+me:me||"زائر"),t:t,ts:Date.now()})}
 function sub(c,seed){return db.collection(c).onSnapshot(function(sn){var a=sn.docs.map(function(d){var o=d.data();var r={id:d.id};for(var k in o)r[k]=o[k];return r});
  if(!a.length&&seed&&!seeded[c]&&me){seeded[c]=1;D[c].forEach(function(o){put(c,o)});return}
  if(c=="tasks"){a=a.filter(function(t){if(/^t(1[0-9]|2[01])$/.test(t.id)){rm("tasks",t.id);return false}return true})}
@@ -355,13 +355,13 @@ function modal(h){$("mb").innerHTML=h;$("md").className="on"}function closeM(){C
 function everyone(){return [SUP,LEAD].concat(MEM)}
 function canSend(){return own||me==LEAD||me==SUP}
 function loginM(){go()}
-function ownM(){modal('<h3 style="margin:0">دخول المالك (سجل الحركات)</h3><input id="op" type="password" placeholder="كلمة سر المالك"><div class="row"><button class="btn" onclick="ownIn()">دخول</button><button class="btn g" onclick="closeM()">إلغاء</button></div>')}
+function ownM(){modal('<h3 style="margin:0">دخول المسئول (سجل الحركات)</h3><input id="op" type="password" placeholder="كلمة سر المسئول"><div class="row"><button class="btn" onclick="ownIn()">دخول</button><button class="btn g" onclick="closeM()">إلغاء</button></div>')}
 async function unlock(p,E){var b=Uint8Array.from(atob(E||ENC),function(c){return c.charCodeAt(0)}),k=await crypto.subtle.importKey("raw",new TextEncoder().encode(p),"PBKDF2",false,["deriveKey"]),key=await crypto.subtle.deriveKey({name:"PBKDF2",salt:b.slice(0,16),iterations:200000,hash:"SHA-256"},k,{name:"AES-GCM",length:256},false,["decrypt"]);return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:b.slice(16,28)},key,b.slice(28))))}
 async function loginOld(){var p=$("lp").value,w=$("lw").value;if(!HP[w]||await sha(p)!=HP[w]){toast("كلمة السر غير صحيحة");return}me=w;own=(w==SUP||w==LEAD);$("lp").value="";location.hash="#home";toast("أهلًا "+w);act("دخول عضو الفريق");go()}
-async function ownIn(){if(await sha($("op").value)==OH){try{await sbLogin("المالك",$("op").value)}catch(x){toast(x.message);return}own=true;try{CT=await unlock($("op").value)}catch(x){}if(!me)me="المالك";location.hash="#home";closeM();toast("أهلًا بالمالك — صلاحية كاملة على كل الأعضاء");act("دخول المالك");go()}else toast("كلمة سر المالك غير صحيحة")}
+async function ownIn(){if(await sha($("op").value)==OH){try{await sbLogin("المالك",$("op").value)}catch(x){toast(x.message);return}own=true;try{CT=await unlock($("op").value)}catch(x){}if(!me)me="المالك";location.hash="#home";closeM();toast("أهلًا بالمسئول — صلاحية كاملة على كل الأعضاء");act("دخول المسئول");go()}else toast("كلمة سر المسئول غير صحيحة")}
 async function logout(){act("تسجيل خروج");await sbOut();me=null;own=false;CT=null;CH=null;closeM();go()}
-function outO(){act("خروج المالك");own=false;if(me=="المالك"||own==false&&everyone().indexOf(me)>=0&&false)me=null;go()}
-function asM(v){me=v;act("المالك يعمل كـ "+v);go()}
+function outO(){act("خروج المسئول");own=false;if(me=="المالك"||own==false&&everyone().indexOf(me)>=0&&false)me=null;go()}
+function asM(v){me=v;act("المسئول يعمل كـ "+v);go()}
 function ctM(){modal('<h3 style="margin:0">فتح بيانات الاتصال</h3><input id="cp" type="password" placeholder="كلمة سر بيانات الاتصال"><div class="row"><button class="btn" onclick="ctGo()">فتح</button><button class="btn g" onclick="closeM()">إلغاء</button></div>')}
 async function ctGo(){try{CT=await unlock($("cp").value)}catch(e){toast("كلمة السر غير صحيحة");return}closeM();go()}
 var CL=[];function chatL(i){chatM(CL[i])}
@@ -759,7 +759,7 @@ home:function(){
  var fb=function(l,v){return'<div><span>'+l+'</span><b>'+v+'</b></div>'};
  h+='<div class="card"><div class="hm-h"><h3>الملخص المالي</h3><a class="hm-lnk" href="#cost">صفحة التكاليف ←</a></div>'
   +(cf.total?'<div class="hm-fin">'+fb("الميزانية الكلية",fm(cf.total)+EG)+fb("المصروف الفعلي",fm(ac)+EG)+fb("المبالغ المدفوعة",fm(paid)+EG)+fb("غير المدفوعة",fm(due)+EG)+fb("المتبقي من الميزانية",fm(cf.total-ac)+EG)+fb("نسبة الاستهلاك",fm(ut)+"٪")+'</div><div class="hm-bar s" style="margin-top:12px"><i style="width:'+Math.min(100,ut)+'%;background:'+uc+'"></i></div>'+(ut>=100?'<div class="demo" style="border-color:#ef4444;background:rgba(239,68,68,.12)">🚨 تم تجاوز الميزانية الكلية</div>':ut>=80?'<div class="demo">⚠️ الصرف وصل '+fm(ut)+'٪ من الميزانية</div>':'')+(lg?'<p class="note" style="margin:8px 0 0">يشمل '+fm(lg)+EG+' من مكونات مُعلَّمة «تم الشراء» دون مصروف مرتبط.</p>':'')
-   :'<div class="demo">لم يتم تحديد الميزانية'+(own?' — حدّدها من صفحة التكاليف.':' — يحددها المالك.')+'</div><div class="hm-fin" style="margin-top:10px">'+fb("المصروف الفعلي",fm(ac)+EG)+fb("غير المدفوعة",fm(due)+EG)+'</div>')+'</div></div>';
+   :'<div class="demo">لم يتم تحديد الميزانية'+(own?' — حدّدها من صفحة التكاليف.':' — يحددها المسئول.')+'</div><div class="hm-fin" style="margin-top:10px">'+fb("المصروف الفعلي",fm(ac)+EG)+fb("غير المدفوعة",fm(due)+EG)+'</div>')+'</div></div>';
  /* robot + activity */
  var fd=hmFeed();
  h+='<div class="hm-g2"><div class="card"><div class="hm-h"><h3>حالة الروبوت</h3><a class="hm-lnk" href="#robot">صفحة حالة الروبوت ←</a></div><div id="hm-rb">'+hmRobotHtml()+'</div></div>'
@@ -788,7 +788,7 @@ inst:function(){var h='<div class="card"><h3>التركيب والتنفيذ —
  h+='<div class="card"><h3>سجل التحديثات (<span id="ins-count">'+fm(D.inst.length)+'</span>)</h3><div id="ins-list">'+instBody()+'</div></div>';
  return h},
 msgs:function(){return mView()},
-log:function(){if(!own)return lock("سجل الحركات متاح للمالك فقط.","ownM()","دخول المالك");var l=D.logs.slice().sort(function(a,b){return b.ts-a.ts});return '<div class="card"><h3>سجل الحركات — كل إجراء في الموقع مسجّل ('+fm(l.length)+')</h3><div class="wrap"><table class="tbl"><tr><th>الوقت</th><th>بواسطة</th><th>الإجراء</th></tr>'+l.map(function(x){return '<tr><td>'+dt(x.ts)+'</td><td>'+esc(x.w)+'</td><td>'+esc(x.t)+'</td></tr>'}).join("")+'</table></div></div>'},
+log:function(){if(!own)return lock("سجل الحركات متاح للمسئول فقط.","ownM()","دخول المسئول");var l=D.logs.slice().sort(function(a,b){return b.ts-a.ts});return '<div class="card"><h3>سجل الحركات — كل إجراء في الموقع مسجّل ('+fm(l.length)+')</h3><div class="wrap"><table class="tbl"><tr><th>الوقت</th><th>بواسطة</th><th>الإجراء</th></tr>'+l.map(function(x){return '<tr><td>'+dt(x.ts)+'</td><td>'+esc(x.w)+'</td><td>'+esc(x.t)+'</td></tr>'}).join("")+'</table></div></div>'},
 cost:function(){return costNew()},
 reports:function(){var m=["سبت","أكت","نوف","ديس","يناير","فبر","مارس","أبريل","مايو"],pl=[0,12,25,38,52,66,80,92,100],ac=[0,pc(cnt().d,D.tasks.length)],W=620,H=240,x=function(i){return 40+i*(W-60)/8},y=function(v){return H-30-v*(H-60)/100};
  var s='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:700px">';[0,25,50,75,100].forEach(function(v){s+='<line x1="40" x2="'+(W-20)+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="var(--bd)"/><text x="30" y="'+(y(v)+4)+'" font-size="10" text-anchor="end" fill="var(--mut)">'+v+'</text>'});
@@ -802,7 +802,7 @@ tests:function(){var l=D.tests.slice().sort(function(a,b){return b.d<a.d?-1:1}),
  h+=me?'<div class="card"><h3>تسجيل اختبار</h3><form class="f" onsubmit="addQ(event)" style="flex-direction:column;align-items:stretch"><input name="n" placeholder="اسم الاختبار" required><input name="g" placeholder="الهدف"><input name="x" placeholder="النتيجة المتوقعة"><input name="a" placeholder="النتيجة الفعلية"><select name="s"><option value="r">قيد الاختبار</option><option value="p">ناجح</option><option value="f">فاشل</option></select><input type="date" name="d"><select name="o">'+everyone().map(function(n){return '<option'+(n==me?' selected':'')+'>'+esc(n)+'</option>'}).join("")+'</select><input name="nt" placeholder="ملاحظات"><div><button class="btn">حفظ</button></div></form></div>':'';
  return h+'<div class="card"><h3>سجل الاختبارات</h3><div class="wrap"><table class="tbl"><tr><th>الاختبار</th><th>الهدف</th><th>المتوقع</th><th>الفعلي</th><th>الحالة</th><th>التاريخ</th><th>المسؤول</th><th>ملاحظات</th>'+(me?'<th></th>':'')+'</tr>'+l.map(function(t){return '<tr><td>'+esc(t.n)+'</td><td>'+esc(t.g)+'</td><td>'+esc(t.x)+'</td><td>'+esc(t.a)+'</td><td><button class="pill '+QS[t.s][1]+'" onclick="cycQ(\''+t.id+'\')">'+QS[t.s][0]+'</button></td><td>'+esc(t.d)+'</td><td>'+esc(t.o)+'</td><td>'+esc(t.nt)+'</td>'+(me?'<td><button class="pill s-n" onclick="delQ(\''+t.id+'\')">حذف</button></td>':'')+'</tr>'}).join("")+'</table></div></div>'},
 chats:function(){CL=everyone().filter(function(n){return n!=me});if(!own&&me!="المالك")CL.push("المالك");return '<div class="card"><h3>المحادثات الخاصة</h3><p class="note">اضغط على أي شخص لفتح المحادثة وإرسال رسالة خاصة له.</p>'+CL.map(function(n,i){var l=D.dms.filter(function(m){return(m.w==me&&m.to==n)||(m.w==n&&m.to==me)}).sort(function(a,b){return b.ts-a.ts})[0];return '<div class="upd row" style="cursor:pointer" onclick="chatL('+i+')"><div><b>'+esc(n)+'</b><small>'+(l?esc((l.w==me?"أنت: ":"")+l.t.slice(0,60))+" · "+dt(l.ts):"لا توجد رسائل بعد")+'</small></div><button class="pill s-p">💬 محادثة</button></div>'}).join("")+'</div>'},
-visitors:function(){if(!me)return lock("رسائل الزوار متاحة لأعضاء الفريق والمالك.","loginM()","دخول الفريق");var l=D.vis.slice().sort(function(a,b){return b.ts-a.ts});return '<div class="card"><h3>رسائل الزوار ('+fm(l.length)+')</h3>'+(l.map(function(x){return '<div class="upd row" style="align-items:flex-start"><div>'+esc(x.t)+'<small>'+esc(x.n)+' · '+dt(x.ts)+'</small></div><button class="pill s-n" onclick="delV(\''+x.id+'\')">حذف</button></div>'}).join("")||'<p class="note">لا توجد رسائل من الزوار بعد.</p>')+'</div>'}
+visitors:function(){if(!me)return lock("رسائل الزوار متاحة لأعضاء الفريق والمسئول.","loginM()","دخول الفريق");var l=D.vis.slice().sort(function(a,b){return b.ts-a.ts});return '<div class="card"><h3>رسائل الزوار ('+fm(l.length)+')</h3>'+(l.map(function(x){return '<div class="upd row" style="align-items:flex-start"><div>'+esc(x.t)+'<small>'+esc(x.n)+' · '+dt(x.ts)+'</small></div><button class="pill s-n" onclick="delV(\''+x.id+'\')">حذف</button></div>'}).join("")||'<p class="note">لا توجد رسائل من الزوار بعد.</p>')+'</div>'}
 };
 function addQ(e){e.preventDefault();if(!need())return;var f=e.target,o={id:"q"+Date.now(),n:f.n.value,g:f.g.value,x:f.x.value,a:f.a.value,s:f.s.value,d:f.d.value||new Date().toISOString().slice(0,10),o:f.o.value,nt:f.nt.value};put("tests",o);act("سجّل اختبارًا «"+o.n+"»");f.reset()}
 function cycQ(id){if(!need())return;var t=D.tests.filter(function(x){return x.id==id})[0],n={r:"p",p:"f",f:"r"}[t.s];put("tests",Object.assign({},t,{s:n}));act("غيّر حالة الاختبار «"+t.n+"»")}
@@ -835,13 +835,13 @@ function bkPayload(){return{app:"project-tracker",v:1,at:Date.now(),by:me||"",da
 
 /* ---- النسخ الاحتياطي: يُحفظ في قاعدة البيانات ويُسجَّل في السجل ---- */
 async function bkCreate(kind){
- if(!own){toast("النسخ الاحتياطي للمالك فقط");return false}
+ if(!own){toast("النسخ الاحتياطي للمسئول فقط");return false}
  var o=bkPayload(),txt=JSON.stringify(o),id="bk"+Date.now()+Math.floor(Math.random()*99);
  var ok=await put("bk",{id:id,kind:kind,by:me||"",at:o.at,size:txt.length,status:"ok",p:txt});
  if(kind!="pre")saveFile("backup-"+bkStamp()+".json",new Blob([txt],{type:"application/json"}));
  if(!ok){act("فشل إنشاء نسخة احتياطية في قاعدة البيانات");return false}
  act("أنشأ نسخة احتياطية ("+BKK[kind]+")");return id}
-async function bkManual(){if(!own){toast("النسخ الاحتياطي للمالك فقط");return}var r=await bkCreate("manual");if(r)toast("تم إنشاء النسخة وتنزيلها ✓")}
+async function bkManual(){if(!own){toast("النسخ الاحتياطي للمسئول فقط");return}var r=await bkCreate("manual");if(r)toast("تم إنشاء النسخة وتنزيلها ✓")}
 
 function bkValidate(t){
  var j;try{j=JSON.parse(t)}catch(e){return{err:"الملف ليس JSON صالحًا"}}
@@ -858,7 +858,7 @@ function bkValidate(t){
 
 function restoreFile(inp){
  var f=inp.files[0];inp.value="";if(!f)return;
- if(!own){toast("الاستعادة للمالك فقط");return}
+ if(!own){toast("الاستعادة للمسئول فقط");return}
  f.text().then(function(t){var r=bkValidate(t);if(r.err){toast(r.err);return}bkConfirm(r.j,f.name)},function(){toast("تعذّرت قراءة الملف")})}
 function bkFromHist(id){if(!own)return;var r=D.bk.filter(function(x){return x.id==id})[0];if(!r){toast("النسخة غير موجودة");return}
  var v=bkValidate(r.p||"");if(v.err){toast(v.err);return}bkConfirm(v.j,"من السجل ("+dt(r.at)+")")}
@@ -872,7 +872,7 @@ function bkConfirm(j,name){
  +'<label style="font-size:14px"><input type="checkbox" id="bk_ok"> أفهم أن الاستعادة قد تستبدل البيانات الحالية</label>'
  +'<div class="row"><button class="btn" onclick="bkRun()">تنفيذ الاستعادة</button><button class="btn g" onclick="RST=null;closeM()">إلغاء</button></div>')}
 async function bkRun(){
- if(!own){toast("الاستعادة للمالك فقط");return}
+ if(!own){toast("الاستعادة للمسئول فقط");return}
  if(!RST){toast("لا يوجد ملف للاستعادة");return}
  var ck=$("bk_ok");if(!ck||!ck.checked){toast("فعّل خانة التأكيد أولًا");return}
  var j=RST;RST=null;
@@ -982,7 +982,7 @@ function bkView(){
  h+='<div class="grid g3">'
  +'<div class="card"><h3>💾 النسخ الاحتياطي والاستعادة</h3><p class="note">نسخة كاملة من بيانات الموقع بصيغة JSON، تُسمّى بالتاريخ والوقت وتُسجَّل في السجل.</p>'
  +(own?'<div class="row" style="flex-wrap:wrap;margin-bottom:8px"><button class="btn" onclick="bkManual()">نسخ احتياطي الآن</button><button class="btn g" onclick="$(\'bk_file\').click()">استعادة من ملف</button><input type="file" id="bk_file" accept=".json,application/json" style="display:none" onchange="restoreFile(this)"></div><p class="note">الاستعادة تفحص الملف أولًا، وتُنشئ نسخة تلقائية من البيانات الحالية قبل تنفيذها.</p>'
- :'<p class="note">النسخ والاستعادة متاحان للمالك فقط.</p>')
+ :'<p class="note">النسخ والاستعادة متاحان للمسئول فقط.</p>')
  +'</div>'
  +'<div class="card"><h3>📤 تصدير البيانات</h3>'
  +'<div class="row" style="flex-wrap:wrap;margin-bottom:8px"><select style="flex:1;min-width:170px" onchange="bkSet(\'sec\',this.value)">'+secOpts+'</select><select onchange="bkSet(\'fmt\',this.value)">'+fmtOpt("xlsx","Excel (XLSX)")+fmtOpt("csv","CSV")+fmtOpt("json","JSON")+'</select></div>'
@@ -1153,7 +1153,7 @@ function catCalc(){
  function g(n){if(!M[n])M[n]={n:n,b:+C.cats[n]||0,spent:0,committed:0,cnt:0,d:desc[n]||""};return M[n]}
  C.list.forEach(g);
  D.exp.forEach(function(e){var c=g(e.c||"مصروفات أخرى");c.spent+=paidOf(e);c.committed+=totOf(e);c.cnt++});
- D.parts.forEach(function(p){if(linkedP(p.id))return;var c=g(pCat(p)),v=(+p.q||0)*(+p.u||0);c.committed+=v;if(p.s>0)c.spent+=v;c.cnt++});
+ D.parts.forEach(function(p){if(linkedP(p.id))return;var c=g(pCat(p)),v=(+p.q||0)*(+p.u||0);c.committed+=v;if(p.s==1||p.s==3)c.spent+=v;c.cnt++});
  return C.list.map(function(n){return M[n]}).concat(Object.keys(M).filter(function(n){return C.list.indexOf(n)<0}).map(function(n){return M[n]}))}
 
 /* الميزانية: كل تغيير يُسجَّل مع السبب والمشرف، ولا يُحذف شيء */
@@ -1624,12 +1624,35 @@ function partDel(id){
  rm("parts",id);
  if(D.prices.some(function(x){return x.id==id}))rm("prices",id);
  act("حذف مكونًا «"+p.n+"»");toast("تم حذف المكون")}
+/* ===== ربط المكونات بالميزانية: خصم تلقائي عند «تم الشراء» ===== */
+var PSYNC={},SYNC_READY=false;
+setTimeout(function(){SYNC_READY=true},6000);
+function isBought(p){return p.s==1||p.s==3}
+function syncPurchases(){
+ if(!SYNC_READY||!isCostAdmin()||!me)return;
+ D.parts.forEach(function(p){
+  var bought=isBought(p),e=D.exp.filter(function(x){return x.pid==p.id})[0];
+  if(bought&&!e){
+   if(PSYNC[p.id])return; PSYNC[p.id]=1;
+   put("exp",{id:"e"+Date.now()+Math.floor(Math.random()*99),n:p.n,c:pCat(p),q:+p.q||1,u:+p.u||0,d:new Date().toISOString().slice(0,10),s:"",m:"مكونات",pay:"",ds:"شراء مكوّن من قسم المكونات",st:"p",pa:0,pid:p.id,nt:"خُصم تلقائيًا عند تغيير حالة المكوّن إلى «"+PS[p.s]+"»",img:"",ts:Date.now(),w:"النظام",auto:true});
+   act("💰 خصم «"+p.n+"» من الميزانية تلقائيًا");
+   return}
+  if(bought&&e&&e.auto){
+   if((e.q!=p.q||e.u!=p.u||e.n!=p.n)&&!PSYNC[p.id]){PSYNC[p.id]=1;put("exp",Object.assign({},e,{n:p.n,c:pCat(p),q:+p.q||1,u:+p.u||0}));act("💰 حدّث خصم «"+p.n+"» بعد تعديل السعر أو الكمية")}
+   else if(!(e.q!=p.q||e.u!=p.u||e.n!=p.n))delete PSYNC[p.id];
+   return}
+  if(!bought&&e&&e.auto){
+   if(PSYNC[p.id])return; PSYNC[p.id]=1;
+   rm("exp",e.id);act("💰 أُلغي خصم «"+p.n+"» لأن حالته لم تعد «تم الشراء»");
+   return}
+  delete PSYNC[p.id]})}
+setInterval(syncPurchases,2000);
 var LB=false;
 function lclr(){var m=$("le");if(m){m.className="lgm";m.textContent=""}["lu","lp"].forEach(function(i){var e=$(i);if(e)e.classList.remove("bad")})}
 function lerr(id,msg){var m=$("le"),c=document.querySelector(".lgc");m.className="lgm er";m.textContent=msg;if(id)$(id).classList.add("bad");if(c){c.classList.remove("shake");void c.offsetWidth;c.classList.add("shake")}if(id)$(id).focus()}
 function lbusy(b){LB=b;var x=$("lb");if(x){x.disabled=b;x.classList.toggle("ld",b)}}
 function togglePw(b){var i=$("lp"),s=i.type=="password";i.type=s?"text":"password";b.setAttribute("aria-label",s?"إخفاء كلمة السر":"إظهار كلمة السر");b.querySelector(".sl").style.display=s?"block":"none"}
-function forgotM(){modal('<h3 style="margin:0">نسيت كلمة السر؟</h3><p class="note">لا يوجد استرجاع تلقائي. اكتب اسمك وسيصل طلبك إلى المالك (في صفحة رسائل الزوار) ليعيد تعيينها.</p><input id="fu" placeholder="اسمك كما يظهر في القائمة" list="lul"><div class="row"><button class="btn" onclick="sendForgot()">إرسال الطلب</button><button class="btn g" onclick="closeM()">إلغاء</button></div>')}
+function forgotM(){modal('<h3 style="margin:0">نسيت كلمة السر؟</h3><p class="note">لا يوجد استرجاع تلقائي. اكتب اسمك وسيصل طلبك إلى المسئول (في صفحة رسائل الزوار) ليعيد تعيينها.</p><input id="fu" placeholder="اسمك كما يظهر في القائمة" list="lul"><div class="row"><button class="btn" onclick="sendForgot()">إرسال الطلب</button><button class="btn g" onclick="closeM()">إلغاء</button></div>')}
 async function sendForgot(){var n=$("fu").value.trim();if(!n){toast("اكتب اسمك أولًا");return}await put("vis",{id:"v"+Date.now(),n:n,t:"طلب إعادة تعيين كلمة السر",ts:Date.now()});closeM();toast("تم إرسال الطلب للمالك")}
 async function login(e){if(e)e.preventDefault();if(LB)return;lclr();var u=$("lu").value.trim().replace(/\s+/g," "),p=$("lp").value;
  if(!u){lerr("lu","أدخل اسم المستخدم");return}
@@ -1647,7 +1670,7 @@ var CATS0=["مكونات إلكترونية","محركات وأنظمة الحر
 function cfg(){var b=D.cfg.filter(function(x){return x.id=="budget"})[0]||{},c=D.cfg.filter(function(x){return x.id=="cats"})[0];return{total:+b.total||0,cats:b.cats||{},list:c&&c.list?c.list:CATS0}}
 function totOf(e){return e.q*e.u}
 function paidOf(e){return e.st=="p"?e.q*e.u:e.st=="h"?(+e.pa||0):0}
-function legacy(){var l={};D.exp.forEach(function(e){if(e.pid)l[e.pid]=1});return D.parts.filter(function(p){return p.s>0&&!l[p.id]}).reduce(function(a,p){return a+p.q*p.u},0)}
+function legacy(){var l={};D.exp.forEach(function(e){if(e.pid)l[e.pid]=1});return D.parts.filter(function(p){return (p.s==1||p.s==3)&&!l[p.id]}).reduce(function(a,p){return a+p.q*p.u},0)}
 function fx(){var s=CF.so;return D.exp.filter(function(e){return(!CF.from||e.d>=CF.from)&&(!CF.to||e.d<=CF.to)&&(!CF.cat||e.c==CF.cat)&&(!CF.st||e.st==CF.st)&&(!CF.q||((e.n||"")+" "+(e.s||"")).indexOf(CF.q)>=0)}).sort(function(a,b){return s=="t"?totOf(b)-totOf(a):s=="n"?(a.n>b.n?1:-1):(b.d>a.d?1:b.d<a.d?-1:b.ts-a.ts)})}
 function setF(k,v){CF[k]=v;go()}
 function qf(m){var t=new Date(),d=function(x){return x.toISOString().slice(0,10)};CF.to=m=="a"?"":d(t);CF.from=m=="w"?d(new Date(Date.now()-6*864e5)):m=="m"?d(t).slice(0,7)+"-01":m=="y"?d(t).slice(0,4)+"-01-01":"";go()}
@@ -2095,13 +2118,13 @@ function buildLogin(){var ru="";try{ru=localStorage.getItem("lgu")||""}catch(x){
 <div class="lgrow"><label><input id="lr" type="checkbox"${ru?" checked":""}> تذكّرني (الاسم فقط)</label><a onclick="forgotM()">نسيت كلمة السر؟</a></div>
 <div id="le" class="lgm" role="alert" aria-live="polite"></div>
 <button id="lb" class="lgb" type="submit"><span class="lsp"></span>Sign In</button>
-<div class="lgfoot"><a onclick="ownM()">دخول المالك</a></div>
+<div class="lgfoot"><a onclick="ownM()">دخول المسئول</a></div>
 <p>التحقق يتم داخل الصفحة وليس على خادم مستقل، فهو ليس مصادقة آمنة بالكامل.</p></form>`}
-function buildLoginOld(){$("lg").innerHTML='<div class="box"><h2>🎓 NOVA Clean</h2><p>روبوت التنظيف المنزلي الذكي</p><select id="lw">'+everyone().map(function(n){return '<option>'+esc(n)+'</option>'}).join("")+'</select><input id="lp" type="password" placeholder="كلمة السر" onkeydown="if(event.key==\'Enter\')login()"><button class="btn" onclick="login()">تسجيل الدخول</button><div class="row"><a href="#" onclick="ownM();return false" class="note">دخول المالك</a><a href="#" onclick="visM();return false" class="note">رسالة للفريق (زائر)</a></div></div>'}
+function buildLoginOld(){$("lg").innerHTML='<div class="box"><h2>🎓 NOVA Clean</h2><p>روبوت التنظيف المنزلي الذكي</p><select id="lw">'+everyone().map(function(n){return '<option>'+esc(n)+'</option>'}).join("")+'</select><input id="lp" type="password" placeholder="كلمة السر" onkeydown="if(event.key==\'Enter\')login()"><button class="btn" onclick="login()">تسجيل الدخول</button><div class="row"><a href="#" onclick="ownM();return false" class="note">دخول المسئول</a><a href="#" onclick="visM();return false" class="note">رسالة للفريق (زائر)</a></div></div>'}
 function go(){mergePrices();try{if(SB.sess)localStorage.setItem("sbme",JSON.stringify({me:me}))}catch(e){}$("lg").style.display=me?"none":"flex";if(!ready||!me)return;if(CH)refreshChat();var h=(location.hash||"#home").slice(1),p=PAGES.filter(function(x){return x[0]==h})[0];if(!p){p=PAGES[0];h="home"}
  var act0=document.activeElement;if(act0&&/INPUT|SELECT|TEXTAREA/.test(act0.tagName)&&act0.type!="file"&&document.activeElement.closest&&document.activeElement.closest("form")&&$("v").contains(act0))return;
  $("ttl").textContent=p[1];$("v").innerHTML=V[h]();
- $("who").innerHTML=(me?'<span>🟢 '+esc(me)+'</span><button class="btn g" onclick="logout()">خروج</button>':'<span class="note">وضع المشاهدة</span><button class="btn" onclick="loginM()">دخول الفريق</button>')+(own?'<span>🔑 المالك — دخول كـ</span><select onchange="asM(this.value)"><option>المالك</option>'+everyone().map(function(n){return '<option'+(n==me?' selected':'')+'>'+esc(n)+'</option>'}).join("")+'</select><button class="btn g" onclick="outO()">خروج المالك</button>':'');
+ $("who").innerHTML=(me?'<span>🟢 '+esc(me)+'</span><button class="btn g" onclick="logout()">خروج</button>':'<span class="note">وضع المشاهدة</span><button class="btn" onclick="loginM()">دخول الفريق</button>')+(own?'<span>🔑 المسئول — دخول كـ</span><select onchange="asM(this.value)"><option value="المالك">المسئول</option>'+everyone().map(function(n){return '<option'+(n==me?' selected':'')+'>'+esc(n)+'</option>'}).join("")+'</select><button class="btn g" onclick="outO()">خروج المسئول</button>':'');
  $("nav").innerHTML='<div class="logo">'+NOVA_MARK+'<div><b>NOVA Clean</b><small>لوحة التحكم</small></div></div>'+PAGES.filter(function(x){return x[0]=="log"?own:(x[0]=="msgs"||x[0]=="visitors"||x[0]=="chats")?!!me:true}).map(function(x){return '<a href="#'+x[0]+'" class="'+(x[0]==h?"on":"")+'">'+x[1]+'</a>'}).join("")+'<div class="sp"></div><button class="tg" onclick="tg()">🌙 الوضع الليلي</button>'}
 function tg(){var r=document.documentElement,d=r.getAttribute("data-theme")=="dark"||(!r.getAttribute("data-theme")&&matchMedia("(prefers-color-scheme:dark)").matches);r.setAttribute("data-theme",d?"light":"dark")}
 buildLogin();setTimeout(function(){document.documentElement.classList.remove("bt")},8000);addEventListener("hashchange",go);boot();setInterval(rbTick,1000);
