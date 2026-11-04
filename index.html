@@ -374,8 +374,6 @@ function need(){if(!me){loginM();return false}return true}
 async function sha2(b){var d=await crypto.subtle.digest("SHA-256",await b.arrayBuffer());return Array.from(new Uint8Array(d)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")}
 function inbox(){return D.msgs.filter(function(m){return me&&(m.to.indexOf("*")>=0||m.to.indexOf(me)>=0)}).sort(function(a,b){return b.ts-a.ts})}
 function sent(){return D.msgs.filter(function(m){return m.w==me}).sort(function(a,b){return b.ts-a.ts})}
-function sendM(e){e.preventDefault();if(!canSend())return;var f=e.target,t=f.elements["t"].value.trim(),to=f.elements["all"].checked?["*"]:Array.prototype.filter.call(f.querySelectorAll("input[name=r]"),function(c){return c.checked}).map(function(c){return c.value});if(!t)return;if(!to.length){toast("اختر مستلمًا واحدًا على الأقل");return}put("msgs",{id:"m"+Date.now(),w:me,t:t,to:to,ts:Date.now()});act("أرسل رسالة إلى "+(to[0]=="*"?"كل الأعضاء":to.length+" عضو"));f.reset()}
-function delM(id){if(!canSend())return;if(!confirm("حذف الرسالة؟"))return;rm("msgs",id);act("حذف رسالة")}
 function lock(t,f,b){return '<div class="card row"><span>'+t+'</span><button class="btn" onclick="'+f+'">'+b+'</button></div>'}
 function recent(){if(own)return '<div class="card"><h3>آخر الحركات</h3>'+(D.logs.slice().sort(function(a,b){return b.ts-a.ts}).slice(0,4).map(function(l){return '<div class="upd">'+esc(l.t)+'<small>'+dt(l.ts)+' · '+esc(l.w)+'</small></div>'}).join("")||'<p class="note">لا توجد حركات بعد.</p>')+'<a href="#log" style="color:var(--pri);font-size:14px">عرض كل الحركات</a></div>';
  if(!me)return '<div class="card"><h3>الرسائل</h3><p class="note">سجّل دخولك لقراءة الرسائل الموجّهة لك.</p></div>';
@@ -785,10 +783,7 @@ inst:function(){var h='<div class="card"><h3>التركيب والتنفيذ —
   +'</form></div>';
  h+='<div class="card"><h3>سجل التحديثات (<span id="ins-count">'+fm(D.inst.length)+'</span>)</h3><div id="ins-list">'+instBody()+'</div></div>';
  return h},
-msgs:function(){if(!me)return lock("الرسائل متاحة لأعضاء الفريق بعد تسجيل الدخول.","loginM()","دخول الفريق");var h='',cs=canSend();
- if(cs)h+='<div class="card"><h3>رسالة جديدة</h3><form class="f" onsubmit="sendM(event)" style="flex-direction:column;align-items:stretch"><textarea name="t" rows="3" placeholder="اكتب الرسالة" required></textarea><label><input type="checkbox" name="all" checked> كل الأعضاء</label><div class="gal" style="grid-template-columns:repeat(auto-fill,minmax(190px,1fr))">'+MEM.map(function(n){return '<label class="note"><input type="checkbox" name="r" value="'+esc(n)+'"> '+esc(n)+'</label>'}).join("")+'</div><div><button class="btn">إرسال</button></div></form><p class="note">اترك «كل الأعضاء» للإرسال للجميع، أو ألغِه واختر أسماء محددة.</p></div>';
- var l=cs?sent():inbox();
- return h+dmCard()+'<div class="card"><h3>'+(cs?"الرسائل المُرسلة":"رسائلك")+'</h3>'+(l.map(function(x){return '<div class="upd row" style="align-items:flex-start"><div>'+esc(x.t)+'<small>'+esc(x.w)+' · '+dt(x.ts)+(cs?' · إلى: '+(x.to.indexOf("*")>=0?"الكل":esc(x.to.join("، "))):'')+'</small></div>'+(cs?'<button class="pill s-n" onclick="delM(\''+x.id+'\')">حذف</button>':'')+'</div>'}).join("")||'<p class="note">لا توجد رسائل.</p>')+'</div>'},
+msgs:function(){return mView()},
 log:function(){if(!own)return lock("سجل الحركات متاح للمالك فقط.","ownM()","دخول المالك");var l=D.logs.slice().sort(function(a,b){return b.ts-a.ts});return '<div class="card"><h3>سجل الحركات — كل إجراء في الموقع مسجّل ('+fm(l.length)+')</h3><div class="wrap"><table class="tbl"><tr><th>الوقت</th><th>بواسطة</th><th>الإجراء</th></tr>'+l.map(function(x){return '<tr><td>'+dt(x.ts)+'</td><td>'+esc(x.w)+'</td><td>'+esc(x.t)+'</td></tr>'}).join("")+'</table></div></div>'},
 cost:function(){var c=cfg(),L=fx(),paid=D.exp.reduce(function(a,e){return a+paidOf(e)},0),lg=legacy(),ac=paid+lg,est=D.parts.reduce(function(a,p){return a+p.q*p.u},0),due=D.exp.reduce(function(a,e){return a+totOf(e)-paidOf(e)},0),ut=c.total?pc(ac,c.total):0;
  function k(a,b,s){return'<div class="card kpi"><div><span>'+a+'</span><b>'+b+'</b><span>'+(s||"")+'</span></div></div>'}
@@ -1341,6 +1336,123 @@ function finPanel(){
  +'<div class="row" style="flex-wrap:wrap;margin-top:12px"><button class="btn" onclick="finExp(\'xlsx\')">تصدير Excel</button><button class="btn g" onclick="finExp(\'pdf\')">تصدير PDF</button></div>'
  +'<p class="note" style="margin-top:8px">الفترة الزمنية تُطبّق على المصروفات والتقرير الشهري والتصدير.</p></div>';
  return h}
+
+/* ===== الرسائل: مركز الإعلانات والرسائل للفريق ===== */
+if(!D.mread)D.mread=[];
+var MSUB=false,MQ="",MCAT_F="",MTAB="all",MSEEN=null,MSEEN_ME=null;
+var MCATS=["عام","إعلان","تنبيه","تعليمات","مهمة","اجتماع"],MCAT_ICON={"عام":"💬","إعلان":"📢","تنبيه":"⚠️","تعليمات":"📘","مهمة":"✅","اجتماع":"📅"};
+function msgVisible(m){
+ if(!me)return false;
+ if(isCostAdmin()||m.w==me)return true;
+ var t=m.to||[];
+ return t.indexOf("*")>=0||t.indexOf(me)>=0||(t.indexOf("@sup")>=0&&MC_SUPS.indexOf(me)>=0)}
+function vis(){return D.msgs.filter(msgVisible)}
+function myReadAt(){var r=D.mread.filter(function(x){return x.id==me})[0];return r?r.at:0}
+function isUnread(m){return m.w!=me&&m.ts>myReadAt()}
+function unreadCount(){return vis().filter(isUnread).length}
+function mRead(){if(!me){loginM();return}put("mread",{id:me,at:Date.now()});toast("تم تحديد الكل كمقروء ✓")}
+function mToggle(v){var e=$("m-rcpt");if(e)e.style.display=v=="mem"?"grid":"none"}
+function mNotifyOn(){
+ if(!("Notification" in window)){toast("المتصفح لا يدعم الإشعارات");return}
+ Notification.requestPermission().then(function(p){toast(p=="granted"?"تم تفعيل الإشعارات ✓":"لم يتم السماح بالإشعارات")})}
+function mComposer(){
+ var adm=isCostAdmin();
+ var opt=(adm?'<option value="all">كل أعضاء الفريق</option>':'')+'<option value="sup">المشرفين</option><option value="mem">أعضاء محددين</option>';
+ return '<div class="card"><h3>رسالة جديدة</h3><form class="f" onsubmit="sendM(event)" style="flex-direction:column;align-items:stretch">'
+ +'<div class="row" style="flex-wrap:wrap"><select name="cat">'+MCATS.map(function(c){return'<option>'+c+'</option>'}).join("")+'</select>'
+ +'<select name="to" onchange="mToggle(this.value)">'+opt+'</select>'
+ +(adm?'<label class="note"><input type="checkbox" name="pin"> تثبيت</label>':'')+'</div>'
+ +'<div id="m-rcpt" style="display:none" class="gal">'+everyone().filter(function(n){return n!=me}).map(function(n){return'<label class="note"><input type="checkbox" name="r" value="'+esc(n)+'"> '+esc(n)+'</label>'}).join("")+'</div>'
+ +'<textarea name="t" rows="3" placeholder="اكتب الرسالة"></textarea>'
+ +'<input type="file" name="img" accept="image/*" multiple><p class="note">يمكن إرفاق حتى 4 صور. المشرفون فقط يرسلون للفريق كله.</p>'
+ +'<div><button class="btn" id="m-send">إرسال</button></div></form></div>'}
+async function sendM(e){
+ e.preventDefault();if(!me){loginM();return}
+ var f=e.target,btn=$("m-send"),t=f.elements["t"].value.trim(),cat=f.elements["cat"].value,mode=f.elements["to"].value;
+ var to=[];
+ if(mode=="all"){if(!isCostAdmin()){toast("إرسال للفريق كله للمشرفين فقط");return}to=["*"]}
+ else if(mode=="sup")to=["@sup"];
+ else to=Array.prototype.filter.call(f.querySelectorAll("input[name=r]"),function(c){return c.checked}).map(function(c){return c.value});
+ if(!to.length){toast("اختر المستلمين");return}
+ var files=Array.prototype.slice.call(f.elements["img"].files||[],0,4),atts=[];
+ if(!t&&!files.length){toast("اكتب نصًا أو أرفق صورة");return}
+ if(btn)btn.disabled=true;
+ try{
+  for(var i=0;i<files.length;i++){var r=await upImg(files[i],"messages");atts.push(r.id)}
+  var o={id:"m"+Date.now()+Math.floor(Math.random()*99),w:me,t:t,to:to,cat:cat,ts:Date.now(),att:atts};
+  if(f.elements["pin"]&&f.elements["pin"].checked&&isCostAdmin())o.pin=true;
+  var ok=await put("msgs",o);
+  if(ok){act("أرسل رسالة ("+cat+") إلى "+(to[0]=="*"?"كل الأعضاء":to[0]=="@sup"?"المشرفين":to.length+" عضو"));f.reset();mToggle("sup");f.elements["to"].value="sup";toast("تم الإرسال ✓")}
+ }catch(x){toast("تعذّر إرفاق الصورة: "+(x&&x.message||""))}
+ if(btn)btn.disabled=false}
+function mCanEdit(m){return !!m&&(m.w==me||isCostAdmin())}
+function mEdit(id){
+ var m=D.msgs.filter(function(x){return x.id==id})[0];
+ if(!mCanEdit(m)){toast("لا تملك صلاحية تعديل هذه الرسالة");return}
+ modal('<h3 style="margin:0">تعديل الرسالة</h3><textarea id="me_t" rows="4">'+esc(m.t||"")+'</textarea><div class="row"><button class="btn" onclick="mSaveEdit(\''+id+'\')">حفظ</button><button class="btn g" onclick="closeM()">إلغاء</button></div>')}
+function mSaveEdit(id){
+ var m=D.msgs.filter(function(x){return x.id==id})[0];if(!mCanEdit(m))return;
+ var t=$("me_t").value.trim();
+ if(!t&&!(m.att||[]).length){toast("لا يمكن ترك الرسالة فارغة");return}
+ put("msgs",Object.assign({},m,{t:t,ed:Date.now(),ein:me||""}));act("عدّل رسالة");closeM();toast("تم الحفظ ✓")}
+function mDel(id){
+ var m=D.msgs.filter(function(x){return x.id==id})[0];
+ if(!mCanEdit(m)){toast("لا تملك صلاحية حذف هذه الرسالة");return}
+ if(!confirm("حذف الرسالة نهائيًا؟"))return;
+ rm("msgs",id);act("حذف رسالة")}
+function mPin(id){
+ if(!isCostAdmin()){toast("التثبيت للمشرفين فقط");return}
+ var m=D.msgs.filter(function(x){return x.id==id})[0];if(!m)return;
+ put("msgs",Object.assign({},m,{pin:!m.pin}));toast(m.pin?"تم إلغاء التثبيت":"تم تثبيت الرسالة 📌")}
+function mItem(m){
+ var mine=m.w==me,nw=isUnread(m),adm=isCostAdmin(),can=mine||adm,t=m.to||[];
+ var tl=t.indexOf("*")>=0?"الفريق كله":t.indexOf("@sup")>=0?"المشرفين":t.map(esc).join("، ");
+ var img=(m.att||[]).map(function(p){return'<img data-sp="'+esc(p)+'" src="'+su(p)+'" alt="" style="max-width:100%;max-height:220px;border-radius:10px;margin-top:6px;display:block">'}).join("");
+ return '<div class="upd" style="max-width:88%;'+(mine?'margin-inline-start:auto;':'')+(nw?'border:1px solid var(--pri);':'')+'">'
+ +'<div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-start"><span class="pill s-p">'+(MCAT_ICON[m.cat]||"💬")+' '+esc(m.cat||"عام")+'</span>'
+ +(m.pin?'<span class="pill s-b">📌 مثبتة</span>':'')+(nw?'<span class="pill s-n">جديدة</span>':'')+'</div>'
+ +(m.t?'<div style="white-space:pre-wrap;margin-top:6px;overflow-wrap:anywhere">'+esc(m.t)+'</div>':'')+img
+ +'<small>'+esc(m.w)+' ← '+tl+' · '+dt(m.ts)+(m.ed?' · عُدّلت':'')+'</small>'
+ +(can?'<div class="row" style="gap:6px;margin-top:6px;justify-content:flex-start;flex-wrap:wrap"><button class="pill s-b" onclick="mEdit(\''+m.id+'\')">تعديل</button>'+(adm?'<button class="pill s-p" onclick="mPin(\''+m.id+'\')">'+(m.pin?'إلغاء التثبيت':'تثبيت')+'</button>':'')+'<button class="pill s-n" onclick="mDel(\''+m.id+'\')">حذف</button></div>':'')
+ +'</div>'}
+function mListHtml(){
+ var q=(MQ||"").trim().toLowerCase();
+ var L=vis().filter(function(m){
+  if(MTAB=="in"&&m.w==me)return false;
+  if(MTAB=="out"&&m.w!=me)return false;
+  if(MCAT_F&&(m.cat||"عام")!=MCAT_F)return false;
+  if(q&&((m.t||"")+" "+(m.w||"")).toLowerCase().indexOf(q)<0)return false;
+  return true});
+ if(!L.length)return '<div class="card" style="text-align:center;padding:30px"><div style="font-size:34px">📭</div><p class="note">'+(vis().length?'لا توجد رسائل تطابق الفلاتر.':'لا توجد رسائل بعد. أول رسالة تظهر هنا.')+'</p></div>';
+ L.sort(function(a,b){return (b.pin?1:0)-(a.pin?1:0)||b.ts-a.ts});
+ var shown=L.slice(0,100);
+ return shown.map(mItem).join("")+(L.length>100?'<p class="note">تُعرض أحدث 100 رسالة. استخدم البحث أو الفلاتر للوصول إلى غيرها.</p>':'')}
+function mBody(){var e=$("m-list");if(e)e.innerHTML=mListHtml()}
+function mView(){
+ if(!me)return lock("الرسائل متاحة لأعضاء الفريق بعد تسجيل الدخول.","loginM()","دخول الفريق");
+ var n=unreadCount();
+ return mComposer()
+ +'<div class="card"><div class="row" style="flex-wrap:wrap;gap:8px"><h3 style="margin:0">الرسائل '+(n?'<span class="pill s-n">'+fm(n)+' غير مقروءة</span>':'')+'</h3>'
+ +'<div class="row" style="flex-wrap:wrap"><button class="btn g" onclick="mRead()">تحديد الكل كمقروء</button><button class="btn g" onclick="mNotifyOn()">تفعيل الإشعارات</button></div></div>'
+ +'<div class="row" style="flex-wrap:wrap;margin:10px 0"><input type="search" placeholder="🔍 ابحث في الرسائل" value="'+esc(MQ)+'" oninput="MQ=this.value;mBody()" style="flex:1;min-width:160px">'
+ +'<select onchange="MCAT_F=this.value;mBody()"><option value="">كل التصنيفات</option>'+MCATS.map(function(c){return'<option'+(MCAT_F==c?' selected':'')+'>'+c+'</option>'}).join("")+'</select>'
+ +'<select onchange="MTAB=this.value;go()"><option value="all"'+(MTAB=="all"?" selected":"")+'>الكل</option><option value="in"'+(MTAB=="in"?" selected":"")+'>الواردة</option><option value="out"'+(MTAB=="out"?" selected":"")+'>المرسلة</option></select></div>'
+ +'<div id="m-list">'+mListHtml()+'</div></div>'}
+/* شريط الإشعارات: عدّاد غير المقروء وتنبيه عند وصول رسالة جديدة */
+function mTick(){
+ if(db&&me&&!MSUB){MSUB=true;sub("mread")}
+ if(MSEEN_ME!==me){MSEEN_ME=me;MSEEN=null}
+ var inc=vis().filter(isUnread),ids=inc.map(function(m){return m.id});
+ if(MSEEN===null)MSEEN=ids;
+ else{var nw=inc.filter(function(m){return MSEEN.indexOf(m.id)<0});
+  if(nw.length){var m=nw[nw.length-1];toast("📩 رسالة جديدة من "+m.w);
+   if("Notification" in window&&Notification.permission=="granted")try{new Notification("رسالة جديدة — "+m.w,{body:(m.t||"").slice(0,120)})}catch(x){}}
+  MSEEN=ids}
+ var n=inc.length,a=document.querySelector('#nav a[href="#msgs"]');
+ if(a){var b=a.querySelector('.ubdg');
+  if(n){if(!b){b=document.createElement('span');b.className='ubdg';b.style.cssText='margin-inline-start:6px;background:#ef4444;color:#fff;border-radius:99px;padding:1px 7px;font-size:12px';a.appendChild(b)}b.textContent=fm(n)}
+  else if(b)b.remove()}}
+setInterval(mTick,2000);
 
 var LB=false;
 function lclr(){var m=$("le");if(m){m.className="lgm";m.textContent=""}["lu","lp"].forEach(function(i){var e=$(i);if(e)e.classList.remove("bad")})}
