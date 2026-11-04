@@ -1585,10 +1585,6 @@ function costNew(){
  var mRows=M.map(function(n,i){var m=mcOf(n),pd=mcPaid(m),s=mcSt(m),r=m.due==null?null:m.due-pd,clr={"s-d":["#064e3b","#6ee7b7"],"s-n":["#4c1d1d","#fca5a5"],"s-b":["#4a3405","#fcd34d"],"s-p":["#1e2a5e","#93c5fd"]}[s.c]||["#1e2a4a","#e8edfb"];
   return'<tr class="cl"'+(adm?' onclick="mcModal('+i+')"':'')+'><td><b>'+esc(n)+'</b></td><td>'+(m.due==null?'<span class="muted">لم يُحدَّد</span>':money(m.due))+'</td><td>'+money(pd)+'</td><td>'+(r==null?'—':r<0?'زيادة '+money(-r):money(r))+'</td><td><span class="pl" style="background:'+clr[0]+';color:'+clr[1]+'">'+s.t+'</span></td></tr>'}).join("");
  var memBox='<div class="box"><div class="row" style="border:0;padding:0 0 10px"><h3 style="margin:0">مساهمات أعضاء الفريق</h3></div>'+(M.length?'<div class="wrapx"><table><tr><th>العضو</th><th>المطلوب</th><th>المدفوع</th><th>المتبقي</th><th>الحالة</th></tr>'+mRows+'</table></div>':'<div class="empty">لا يوجد أعضاء</div>')+(adm?'<p class="muted" style="margin:8px 0 0">اضغط على العضو لتعديل المطلوب وتسجيل الدفعات.</p>':'<p class="muted" style="margin:8px 0 0">عرض فقط للأعضاء.</p>')+'</div>';
- /* آخر المصروفات */
- var lastE_UNUSED=[].sort(function(a,b){return (b.d||"")>(a.d||"")?1:(b.d||"")<(a.d||"")?-1:(b.ts||0)-(a.ts||0)}).slice(0,6);
- var eRows=lastE.map(function(e){return'<tr class="cl"'+(adm?' onclick="expM(\''+e.id+'\')"':'')+'><td>'+esc(e.n)+'</td><td><span class="muted">'+esc(e.c||"—")+'</span></td><td class="muted">'+esc(e.d||"")+'</td><td>'+money(totOf(e))+'</td></tr>'}).join("");
- var expBox='<div class="box"><div class="row" style="border:0;padding:0 0 10px"><h3 style="margin:0">آخر المصروفات</h3></div>'+(lastE.length?'<div class="wrapx"><table><tr><th>المصروف</th><th>الفئة</th><th>التاريخ</th><th>المبلغ</th></tr>'+eRows+'</table></div>':'<div class="empty">لا توجد مصروفات بعد</div>')+'</div>';
  /* الأزرار */
  var btns=(adm?'<button class="nb" onclick="budOpen()">إدارة الميزانية</button><button class="nb" onclick="expM()">+ إضافة مصروف</button>':'')
   +'<button class="nb p" onclick="finExp(\'pdf\')">⬇ تقرير شامل</button>';
