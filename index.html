@@ -86,12 +86,19 @@ aside a{transition:background .2s,transform .2s}aside a:hover{transform:translat
 var SB={c:null,sess:null,bucket:"project-images",ttl:3600,slug:"",role:""};
 var SBM={exp:"انتهت الجلسة. سجّل الدخول من جديد ثم أعد المحاولة.",perm:"ليست لديك صلاحية لهذه العملية على الصور (سياسات Supabase رفضتها).",net:"تعذّر الاتصال بـ Supabase. تحقق من الإنترنت ثم أعد المحاولة.",big:"حجم الملف يتجاوز الحد المسموح (8 ميجا).",nob:"الـ Bucket «project-images» غير موجود. شغّل ملف supabase/setup.sql أولًا."};
 var PH="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==",SU={},SQ={},SQT=null;
+
+async function sbRestore(){try{var g=await SB.c.auth.getSession(),x=g.data&&g.data.session;if(!x)return;
+ var am=x.user.app_metadata||{},un=(x.user.user_metadata||{}).username,sv={};
+ try{sv=JSON.parse(localStorage.getItem("sbme")||"{}")||{}}catch(e){}
+ if(!am.member||!un)return;SB.sess=x;SB.slug=am.slug;SB.role=am.role;
+ own=am.role=="owner";
+ me=(own&&sv.me&&(everyone().indexOf(sv.me)>=0||sv.me=="المالك"))?sv.me:un}catch(e){console.warn(e)}}
 function SBR(){return !!(SB.c&&SB.sess)}
 async function sbInit(){
  if(!window.supabase)throw new Error("تعذّر تحميل مكتبة Supabase");
  var r=await fetch("/api/config",{cache:"no-store"});if(!r.ok)throw new Error("تعذّر قراءة /api/config");
  var c=await r.json();if(!c.url||!c.key)throw new Error("متغيرات Supabase غير مضبوطة في Vercel");
- SB.c=supabase.createClient(c.url,c.key,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:false}});
+ SB.c=supabase.createClient(c.url,c.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
  SB.c.auth.onAuthStateChange(function(ev,s){SB.sess=s;if(ev=="SIGNED_OUT")SU={};if(SB.refresh)SB.refresh()})}
 async function sbLogin(u,p){var r;
  try{r=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:u,password:p})})}catch(e){throw new Error(SBM.net)}
@@ -100,7 +107,7 @@ async function sbLogin(u,p){var r;
  var s=await SB.c.auth.setSession({access_token:j.session.access_token,refresh_token:j.session.refresh_token});
  if(s.error||!s.data.session)throw new Error("رفض Supabase الجلسة: "+(s.error&&s.error.message||""));
  SB.sess=s.data.session;SB.slug=j.slug;SB.role=j.role;SU={};if(SB.refresh)SB.refresh()}
-async function sbOut(){try{if(SB.c)await SB.c.auth.signOut()}catch(e){}SB.sess=null;SU={}}
+async function sbOut(){try{localStorage.removeItem("sbme")}catch(e){}try{if(SB.c)await SB.c.auth.signOut()}catch(e){}SB.sess=null;SU={}}
 async function sbSess(){var g=await SB.c.auth.getSession(),s=g.data&&g.data.session;if(!s)throw new Error(SBM.exp);return s}
 function upMsg(e){var m=((e&&e.message)||"")+"",c=+(e&&(e.statusCode||e.status))||0;
  if(/jwt|expired|invalid token/i.test(m)||c==401)return SBM.exp;
@@ -185,7 +192,7 @@ function sub(c,seed){return db.collection(c).onSnapshot(function(sn){var a=sn.do
  if(c=="tasks"){a=a.filter(function(t){if(/^t(1[0-9]|2[01])$/.test(t.id)){rm("tasks",t.id);return false}return true})}
  D[c]=a;go()},function(){})}
 async function boot(){seedData();
- try{await sbInit();db=sbDb();S=sbAI()}catch(e){db=null;S=null;setTimeout(function(){toast("تعذّر الاتصال بـ Supabase: "+(e&&e.message||e))},300)}
+ try{await sbInit();db=sbDb();S=sbAI();await sbRestore()}catch(e){db=null;S=null;setTimeout(function(){toast("تعذّر الاتصال بـ Supabase: "+(e&&e.message||e))},300)}
  if(db){var keep={tasks:D.tasks,parts:D.parts};D.tasks=keep.tasks;D.parts=keep.parts;sub("tasks",1);sub("parts",1);sub("logs");sub("inst");sub("msgs");sub("dms");sub("vis");sub("tests");sub("exp");sub("cfg")}
  ready=true;go()}
 /* auth */
@@ -846,7 +853,7 @@ function buildLogin(){var ru="";try{ru=localStorage.getItem("lgu")||""}catch(x){
 <div class="lgfoot"><a onclick="ownM()">دخول المالك</a><a onclick="visM()">رسالة للفريق (زائر)</a></div>
 <p>التحقق يتم داخل الصفحة وليس على خادم مستقل، فهو ليس مصادقة آمنة بالكامل.</p></form>`}
 function buildLoginOld(){$("lg").innerHTML='<div class="box"><h2>🎓 تتبّع المشروع</h2><p>روبوت التنظيف المنزلي الذكي</p><select id="lw">'+everyone().map(function(n){return '<option>'+esc(n)+'</option>'}).join("")+'</select><input id="lp" type="password" placeholder="كلمة السر" onkeydown="if(event.key==\'Enter\')login()"><button class="btn" onclick="login()">تسجيل الدخول</button><div class="row"><a href="#" onclick="ownM();return false" class="note">دخول المالك</a><a href="#" onclick="visM();return false" class="note">رسالة للفريق (زائر)</a></div></div>'}
-function go(){$("lg").style.display=me?"none":"flex";if(!ready||!me)return;if(CH)refreshChat();var h=(location.hash||"#home").slice(1),p=PAGES.filter(function(x){return x[0]==h})[0];if(!p){p=PAGES[0];h="home"}
+function go(){try{if(SB.sess)localStorage.setItem("sbme",JSON.stringify({me:me}))}catch(e){}$("lg").style.display=me?"none":"flex";if(!ready||!me)return;if(CH)refreshChat();var h=(location.hash||"#home").slice(1),p=PAGES.filter(function(x){return x[0]==h})[0];if(!p){p=PAGES[0];h="home"}
  var act0=document.activeElement;if(act0&&/INPUT|SELECT|TEXTAREA/.test(act0.tagName)&&act0.type!="file"&&document.activeElement.closest&&document.activeElement.closest("form")&&$("v").contains(act0))return;
  $("ttl").textContent=p[1];$("v").innerHTML=V[h]();
  $("who").innerHTML=(me?'<span>🟢 '+esc(me)+'</span><button class="btn g" onclick="logout()">خروج</button>':'<span class="note">وضع المشاهدة</span><button class="btn" onclick="loginM()">دخول الفريق</button>')+(own?'<span>🔑 المالك — دخول كـ</span><select onchange="asM(this.value)"><option>المالك</option>'+everyone().map(function(n){return '<option'+(n==me?' selected':'')+'>'+esc(n)+'</option>'}).join("")+'</select><button class="btn g" onclick="outO()">خروج المالك</button>':'');
