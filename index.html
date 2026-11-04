@@ -239,7 +239,7 @@ function addT(e){e.preventDefault();if(!need())return;var f=e.target,o={id:"t"+D
 function setPart(id,v){var p=D.parts.filter(function(x){return x.id==id})[0];v=+v;
  if(!me){loginM();go();return}
  if(v==1||v==3){proofM(id,v);return}
- put("parts",Object.assign({},p,{s:v,img:v<3?"":p.img,note:v<3?"":p.note,h:v<3?"":p.h}));act("غيّر حالة «"+p.n+"» إلى "+PS[v])}
+ put("parts",Object.assign({},p,{s:v,img:v<3?"":p.img,note:v<3?"":p.note,h:v<3?"":p.h,ap:v<3?"":p.ap,pv:v<3?"":p.pv}));act("غيّر حالة «"+p.n+"» إلى "+PS[v])}
 async function proof(p,file){
  if(!SBR()||!S){toast("رفع الصور أو التحقق بالذكاء الاصطناعي غير متاح: سجّل الدخول من جديد");go();return}
  toast("جاري رفع الصورة وفحصها بالذكاء الاصطناعي…");
@@ -259,7 +259,7 @@ function prevF(i,pv){var f=i.files[0],im=$(pv);if(!f){im.style.display="none";re
 function dropF(e,fi,pv){var i=$(fi);if(e.dataTransfer.files.length){i.files=e.dataTransfer.files;prevF(i,pv)}}
 async function delImg(id){if(!need())return;var p=D.parts.filter(function(x){return x.id==id})[0];if(!p||!p.img||!confirm("حذف صورة الإثبات؟ سيعود البند لحالة ما قبل الاعتماد."))return;if(!SBR()){toast(NOUP);return}
  try{await delStored(p.img,true)}catch(e){toast(e.message);return}
- await put("parts",Object.assign({},p,{img:"",note:"",h:"",imf:"",imt:"",ims:0,imu:"",imts:0,s:p.s==1?0:p.s==3?2:p.s}));act("حذف صورة إثبات «"+p.n+"»");toast("تم حذف الصورة")}
+ await put("parts",Object.assign({},p,{img:"",note:"",h:"",ap:"",pv:"",imf:"",imt:"",ims:0,imu:"",imts:0,s:p.s==1?0:p.s==3?2:p.s}));act("حذف صورة إثبات «"+p.n+"»");toast("تم حذف الصورة")}
 async function delExpImg(){var e=D.exp.filter(function(x){return x.id==EI})[0];if(!e||!e.img||!confirm("حذف مرفق الفاتورة؟"))return;if(!SBR()){toast(NOUP);return}
  try{await delStored(e.img,true)}catch(x){toast(x.message);return}
  await put("exp",Object.assign({},e,{img:"",h:"",imf:"",imt:"",ims:0,imu:"",imts:0}));act("حذف مرفق مصروف «"+e.n+"»");closeM();toast("تم حذف المرفق")}
@@ -278,30 +278,62 @@ function aiOk(){var g=function(i){return $(i).value.trim()},its=g("a_it").split(
  var nt=[g("a_i")?"فاتورة رقم "+g("a_i"):"",g("a_x")?"ضريبة: "+g("a_x"):"",g("a_c")?"العملة: "+g("a_c"):""].filter(Boolean).join(" — ");if(nt)$("x_nt").value=($("x_nt").value?$("x_nt").value+"\n":"")+nt;
  xt();$("x_ai").textContent="تمت التعبئة بعد اعتمادك — راجع الحقول ثم اضغط «حفظ».";toast("تم اعتماد البيانات في النموذج ✓")}
 function shrink(f){return new Promise(function(ok,no){var im=new Image(),u=URL.createObjectURL(f);im.onload=function(){var s=Math.min(1,1280/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(function(b){b?ok(b):no(new Error("تعذّر تجهيز الصورة"))},"image/jpeg",0.82)};im.onerror=function(){no(new Error("الملف ليس صورة صالحة"))};im.src=u})}
-function proofM(id,v){var p=D.parts.filter(function(x){return x.id==id})[0];RT=null;modal('<h3 style="margin:0">إثبات: '+esc(p.n)+'</h3><p class="note" style="margin:0">'+(v==1?"ارفع صورة المكوّن أو فاتورة الشراء":"ارفع صورة المكوّن بعد تنفيذه أو تركيبه")+'. يفحصها الذكاء الاصطناعي بدقة: صورة حقيقية وواضحة للمكوّن وبكامل الكمية المطلوبة، أو فاتورة تذكر البند. لا تُقبل صور الإنترنت ولا لقطات الشاشة.<br>الصيغ المسموحة: JPG وPNG وWEBP — الحد الأقصى '+fm(UP.max)+' ميجا.</p><div class="note" style="border:2px dashed #999;border-radius:10px;padding:12px;text-align:center" ondragover="event.preventDefault()" ondrop="event.preventDefault();dropF(event,\'pf\',\'pv\')">اسحب الصورة هنا أو اخترها<br><input id="pf" type="file" accept="image/jpeg,image/png,image/webp" onchange="prevF(this,\'pv\')"></div><img id="pv" alt="" style="display:none;max-width:100%;max-height:200px;border-radius:10px"><progress id="pg" style="display:none;width:100%"></progress><div id="pm" class="note"></div><div class="row"><button class="btn" id="pb" onclick="doProof(\''+id+'\','+v+')">رفع وفحص</button><button class="btn" id="rb" style="display:none" onclick="doProof(\''+id+'\','+v+',1)">إعادة الفحص</button><button class="btn g" onclick="closeM();go()">إلغاء</button></div>')}
+function proofM(id,v){var p=D.parts.filter(function(x){return x.id==id})[0];RT=null;modal('<h3 style="margin:0">إثبات: '+esc(p.n)+'</h3><p class="note" style="margin:0">'+(v==1?"ارفع صورة المكوّن أو فاتورة الشراء":"ارفع صورة المكوّن بعد تنفيذه أو تركيبه")+'. يفحصها الذكاء الاصطناعي بدقة: صورة حقيقية وواضحة للمكوّن وبكامل الكمية المطلوبة، أو فاتورة تذكر البند. لا تُقبل صور الإنترنت ولا لقطات الشاشة.<br>الصيغ المسموحة: JPG وPNG وWEBP — الحد الأقصى '+fm(UP.max)+' ميجا.<br>إذا تعذّر الفحص الآلي لسبب تقني (اتصال/توقف الخدمة/انتهاء المهلة) تُحفظ الصورة ويمكنك اعتماد المكوّن مبدئيًا حسب الشكل دون إعادة الرفع.</p><div id="pu"><div class="note" style="border:2px dashed #999;border-radius:10px;padding:12px;text-align:center" ondragover="event.preventDefault()" ondrop="event.preventDefault();dropF(event,\'pf\',\'pv\')">اسحب الصورة هنا أو اخترها<br><input id="pf" type="file" accept="image/jpeg,image/png,image/webp" onchange="prevF(this,\'pv\')"></div><img id="pv" alt="" style="display:none;max-width:100%;max-height:200px;border-radius:10px"><progress id="pg" style="display:none;width:100%"></progress><div id="pm" class="note"></div><div class="row"><button class="btn" id="pb" onclick="doProof(\''+id+'\','+v+')">رفع وفحص</button><button class="btn" id="rb" style="display:none" onclick="doProof(\''+id+'\','+v+',1)">إعادة الفحص</button><button class="btn g" onclick="closeM();go()">إلغاء</button></div></div><div id="fb" style="display:none"></div>');if(p.ap=="tech"&&isPath(p.img)&&(p.pv||v)==v)fbShow(id,v,"")}
 async function aiProof(p,v,b,fail){
  var q='أنت مفتش جودة صارم لمشروع روبوت تنظيف منزلي ذكي. البند المطلوب إثباته: "'+p.n+'" (الكمية المطلوبة: '+p.q+'). نوع الإثبات: '+(v==1?'شراء — يُقبل إما صورة حقيقية للمكوّن نفسه أو فاتورة/إيصال يذكر هذا البند صراحةً':'تنفيذ — يُقبل فقط إذا ظهر المكوّن نفسه مركّبًا أو منفّذًا فعليًا')+'. قواعد صارمة: (1) صِف أولًا ما تراه فعليًا دون افتراض أنه المطلوب، واذكر أي موديل أو نص مقروء عليه. (2) ارفض الصور المنقولة من الإنترنت أو لقطات الشاشة أو صور المتاجر والإعلانات، وكذلك الصور الضبابية أو البعيدة أو التي لا يتميز فيها المكوّن بوضوح. (3) ارفض إن كان المكوّن الظاهر مختلفًا أو مشابهًا فقط (حساس HC-SR04 ليس مستشعر IR، ومحرك N20 ليس موتور الشفط). (4) عُدّ الوحدات الظاهرة بوضوح من المكوّن المطلوب. (5) في الفاتورة يجب أن يظهر اسم البند أو موديله والكمية. (6) عند أي شك اجعل ok=false. رُد بـ JSON فقط وبدون أي نص آخر بهذا الترتيب: {"seen":"وصف ما تراه","kind":"photo أو invoice أو other","count":عدد الوحدات الظاهرة أو الكمية في الفاتورة,"conf":رقم من 0 إلى 100,"ok":true أو false,"note":"جملة عربية قصيرة تشرح القرار"}';
-  var r=await S(q,{images:[b],cache:false}),m=(r.text||"").match(/\{[\s\S]*\}/);if(!m)throw new Error("رد الفحص غير مفهوم، حاول مرة أخرى");
-  var j=JSON.parse(m[0]),cnt=+j.count||0,conf=+j.conf||0,why=j.note||"";
+  var r=await tmo(S(q,{images:[b],cache:false}),60000),m=(r&&r.text||"").match(/\{[\s\S]*\}/);if(!m)throw new Error("رد الفحص غير مفهوم");
+  var j=JSON.parse(m[0]),cnt=+j.count||0,conf=+j.conf||0,why=j.note||"";if(typeof j.ok!=="boolean")throw new Error("رد الفحص غير مفهوم");
   if(!j.ok||j.kind=="other"){fail(why||"الصورة لا تثبت هذا البند");return}
   if(conf<80){fail("الصورة غير واضحة بما يكفي (ثقة "+conf+"٪). "+why);return}
   if(cnt<p.q){fail("الصورة تُظهر "+cnt+" من "+p.q+" المطلوب. ارفع صورة تُظهر الكمية كاملة. "+why);return}
   return{why:why,conf:conf}}
+function tmo(pr,ms){return new Promise(function(ok,no){var t=setTimeout(function(){no(new Error("انتهت مهلة الفحص"))},ms);Promise.resolve(pr).then(function(x){clearTimeout(t);ok(x)},function(e){clearTimeout(t);no(e)})})}
+var PEND="بانتظار الاعتماد بالذكاء الاصطناعي",PRE="تم الاعتماد مبدئيًا بناءً على الشكل الظاهر في الصورة بسبب تعذّر الفحص بالذكاء الاصطناعي";
+function fbHide(){var f=$("fb"),u=$("pu");if(f){f.style.display="none";f.innerHTML=""}if(u)u.style.display="block"}
+function fbChk(c){var b=$("fa");if(b)b.disabled=!c.checked}
+function fbRep(){RT=null;fbHide();$("pb").disabled=false;$("rb").style.display="none";$("pm").textContent="اختر صورة بديلة ثم اضغط «رفع وفحص»."}
+function fbRetry(id,v){doProof(id,v,1)}
+function fbShow(id,v,why){var p=D.parts.filter(function(x){return x.id==id})[0],f=$("fb"),u=$("pu");if(!p||!f)return;
+ var rt=RT&&RT.pid==id&&RT.b?RT:null,src=rt?URL.createObjectURL(rt.b):su(p.img),at=rt?'':' data-sp="'+esc(p.img)+'"',
+ im='<a href="'+src+'"'+at+' target="_blank"><img src="'+src+'"'+at+' alt="صورة الإثبات" style="max-width:100%;max-height:320px;border-radius:10px;display:block;margin:8px auto"></a>';
+ f.innerHTML='<div style="border:2px solid var(--pri);border-radius:10px;padding:12px"><b>تعذّر الفحص بالذكاء الاصطناعي — الصورة محفوظة ولم تُرفض</b>'+(why?'<p class="note" style="margin:4px 0">السبب التقني: '+esc(why)+'</p>':'')+'<div class="note" style="margin:6px 0">المكوّن: <b>'+esc(p.n)+'</b> · الكمية المطلوبة: <b>'+fm(p.q)+'</b> · نوع الإثبات: <b>'+(v==1?"شراء":"تنفيذ")+'</b></div>'+im+'<label class="note" style="display:block;margin:8px 0"><input type="checkbox" id="fk" onchange="fbChk(this)"> راجعت الصورة، والشكل الظاهر فيها متوافق بصورة معقولة مع «'+esc(p.n)+'» والكمية المطلوبة</label><div class="row"><button class="btn" id="fa" disabled onclick="fbOk(\''+id+'\','+v+')">اعتماد مبدئي حسب الشكل</button>'+(rt?'<button class="btn" onclick="fbRetry(\''+id+'\','+v+')">إعادة الفحص</button>':'')+'<button class="btn g" onclick="fbRep()">استبدال الصورة</button><button class="btn g" onclick="closeM();go()">إلغاء</button></div><div class="note">سيُسجَّل الاعتماد كـ «معتمد مبدئيًا» وليس بالذكاء الاصطناعي.</div></div>';
+ f.style.display="block";if(u)u.style.display="none"}
+async function fbOk(id,v){var p=D.parts.filter(function(x){return x.id==id})[0],rt=RT&&RT.pid==id?RT:null,btn=$("fa");
+ if(!me){loginM();return}
+ if(!p)return;if(!$("fk")||!$("fk").checked){toast("أكّد مراجعتك لشكل المكوّن في الصورة أولًا");return}
+ if(!(rt?rt.tech:p.ap=="tech")){toast("الاعتماد المبدئي متاح فقط عند تعذّر الفحص الآلي، وليس عند رفض الذكاء الاصطناعي للصورة");return}
+ var img=rt?rt.up.id:p.img;if(!isPath(img)){toast("لا توجد صورة صالحة لهذا الإثبات");return}
+ btn.disabled=true;
+ try{await put("parts",Object.assign({},p,rt?rt.m:{},{s:v,img:img,h:rt?rt.h:p.h,pv:v,ap:"pre",note:PRE}));
+  act((v==1?"تم شراء «":"تم تنفيذ «")+p.n+"» — اعتماد مبدئي حسب الشكل وليس بالذكاء الاصطناعي: "+PRE);
+  RT=null;closeM();toast("تم الاعتماد المبدئي ✓ (ليس بالذكاء الاصطناعي)")}
+ catch(e){btn.disabled=false;toast("تعذّر الحفظ: "+(e&&e.message||e&&e.code||""))}}
+function apB(p){if(!(p.s==1||p.s==3)||!p.img)return p.ap=="tech"?'<span class="pill s-p">بانتظار الاعتماد المبدئي</span> ':"";return p.ap=="pre"?'<span class="pill s-p">معتمد مبدئيًا</span> ':'<span class="pill s-d">معتمد بالذكاء الاصطناعي</span> '}
 async function doProof(id,v,retry){var p=D.parts.filter(function(x){return x.id==id})[0],pm=$("pm"),st=function(t){pm.textContent=t},bar=function(o){$("pg").style.display=o?"block":"none"},kept=function(){if(RT&&RT.pid==id)$("rb").style.display="inline-block"},fail=function(t){act("رُفض إثبات «"+p.n+"»: "+t);st("لم يُعتمد: "+t+" — الصورة محفوظة، يمكنك إعادة الفحص أو استبدالها.");bar(0);$("pb").disabled=false;kept()};
- $("pb").disabled=true;$("rb").style.display="none";
- try{if(!SBR())throw new Error(NOUP);if(!S)throw new Error("الفحص بالذكاء الاصطناعي غير متاح الآن، ولا يُعتمد أي إثبات بدونه");var lim=await S.limits();if(!lim.images)throw new Error("فحص الصور غير مفعّل حاليًا، ولا يُعتمد أي إثبات بدونه");
+ $("pb").disabled=true;$("rb").style.display="none";fbHide();
+ try{if(!SBR())throw new Error(NOUP);
   var b,up,h,m;
   if(retry&&RT&&RT.pid==id){b=RT.b;up=RT.up;h=RT.h;m=RT.m}
   else{var f=$("pf").files[0],er=await chkImg(f);if(er){st(er);$("pb").disabled=false;return}
    bar(1);st("جاري تجهيز الصورة…");b=await shrink(f);h=await sha2(b);
    var dup=D.parts.filter(function(x){return x.id!=id&&x.h==h})[0]||D.exp.filter(function(x){return x.h==h&&x.pid!=id})[0];if(dup){fail("هذه الصورة مستخدمة بالفعل لبند «"+(dup.n||"آخر")+"». ارفع صورة خاصة بهذا البند.");return}
    st("جاري رفع الصورة…");up=await upImg(b,"components");m={imf:f.name||"",imt:b.type,ims:b.size,imu:me||"",imts:Date.now()};
-   var old=p.img;await put("parts",Object.assign({},p,m,{img:up.id,h:h,note:"بانتظار الاعتماد بالذكاء الاصطناعي",s:p.s==1?0:p.s==3?2:p.s}));
+   var old=p.img;await put("parts",Object.assign({},p,m,{img:up.id,h:h,pv:v,ap:"",note:PEND,s:p.s==1?0:p.s==3?2:p.s}));
    if(old&&old!=up.id){await delStored(old)}
    RT={pid:id,b:b,up:up,h:h,m:m}}
+  RT.tech=false;
   st("الذكاء الاصطناعي يفحص الصورة بدقة…");bar(1);
-  var r=await aiProof(p,v,b,fail);if(!r)return;
-  await put("parts",Object.assign({},p,m,{s:v,img:up.id,note:r.why,h:h}));act((v==1?"تم شراء «":"تم تنفيذ «")+p.n+"» — اعتمده الفحص الدقيق ("+r.conf+"٪): "+r.why);RT=null;closeM();toast("تم الاعتماد ✓ "+r.why)}
+  var r,rejd=false,rej=function(t){rejd=true;RT.tech=false;put("parts",Object.assign({},p,m,{img:up.id,h:h,pv:v,ap:"rej",note:"رُفضت بالذكاء الاصطناعي: "+t,s:p.s==1?0:p.s==3?2:p.s}));fail(t)};
+  try{if(!S)throw new Error("خدمة الذكاء الاصطناعي غير متاحة الآن");
+   var lim=await tmo(S.limits(),20000);if(!lim||!lim.images)throw new Error("فحص الصور غير مفعّل حاليًا");
+   r=await aiProof(p,v,b,rej)}
+  catch(e){if(rejd)return;
+   var why=e&&e.message||e&&e.code||"خطأ غير معروف";
+   await put("parts",Object.assign({},p,m,{img:up.id,h:h,pv:v,ap:"tech",note:"تعذّر الفحص الآلي — بانتظار الاعتماد المبدئي",s:p.s==1?0:p.s==3?2:p.s}));
+   RT.tech=true;act("تعذّر فحص إثبات «"+p.n+"» بالذكاء الاصطناعي ("+why+") — الصورة محفوظة وبانتظار الاعتماد المبدئي، ولم يُرفض الإثبات");
+   bar(0);st("");$("pb").disabled=false;fbShow(id,v,why);return}
+  if(!r)return;
+  await put("parts",Object.assign({},p,m,{s:v,img:up.id,note:r.why,h:h,pv:v,ap:"ai"}));act((v==1?"تم شراء «":"تم تنفيذ «")+p.n+"» — اعتمده الفحص الدقيق بالذكاء الاصطناعي ("+r.conf+"٪): "+r.why);RT=null;closeM();toast("تم الاعتماد ✓ "+r.why)}
  catch(e){bar(0);st("تعذّر: "+(e&&e.message||e&&e.code||e)+(RT&&RT.pid==id?" — الصورة محفوظة، يمكنك إعادة الفحص":""));$("pb").disabled=false;kept()}}
 async function addI(e){e.preventDefault();if(!need())return;var f=e.target,fl=f.f.files[0],id=null;
  try{if(fl){if(!SBR()){toast(NOUP);return}var er=await chkImg(fl);if(er){toast(er);return}id=(await upImg(fl,"updates")).id}}catch(x){toast("فشل رفع الصورة: "+(x&&x.message||""));return}
@@ -324,7 +356,7 @@ tasks:function(){var h='';if(me)h+='<div class="card"><h3>إضافة مهمة (�
  else h+='<div class="card row"><span class="note">تسجيل الدخول بكلمة سر الفريق مطلوب لإضافة المهام أو تغيير حالتها.</span><button class="btn" onclick="loginM()">دخول الفريق</button></div>';
  PH.forEach(function(p,i){var l=D.tasks.filter(function(t){return t.ph==i});h+='<div class="card"><div class="ph"><i style="background:'+p[1]+'"></i><b>'+p[0]+'</b><span class="note">('+fm(l.filter(function(t){return t.s=="d"}).length)+' من '+fm(l.length)+' مكتملة)</span></div><div class="wrap"><table class="tbl"><tr><th>المهمة</th><th>المسؤول</th><th>الحالة</th><th>الاستحقاق</th>'+(me?'<th></th>':'')+'</tr>'+l.map(trow).join("")+'</table></div></div>'});return h},
 parts:function(){var c=[0,0,0,0];D.parts.forEach(function(p){c[p.s]++});
- return '<div class="card"><h3>المكونات ('+fm(D.parts.length)+' بند)</h3><p class="note">'+PS.map(function(s,i){return s+': '+fm(c[i])}).join(" · ")+'<br>لاختيار «تم الشراء» أو «تم التنفيذ» لازم ترفع صورة إثبات (فاتورة أو المكوّن)، ويفحصها الذكاء الاصطناعي ويعتمدها.</p><div class="wrap"><table class="tbl"><tr><th>البند</th><th>الكمية</th><th>الحالة</th><th>الإثبات</th></tr>'+D.parts.map(function(p){return '<tr><td>'+esc(p.n)+'</td><td>'+fm(p.q)+'</td><td><select onchange="setPart(\''+p.id+'\',this.value)" class="pill '+PC[p.s]+'" '+(me?'':'')+'>'+PS.map(function(s,i){return '<option value="'+i+'"'+(i==p.s?" selected":"")+'>'+s+'</option>'}).join("")+'</select></td><td>'+(p.img?'<a href="'+su(p.img)+'" data-sp="'+esc(p.img)+'" target="_blank"><img class="th" src="'+su(p.img)+'" data-sp="'+esc(p.img)+'" alt=""></a><span class="note"> '+esc(p.note)+'</span><br><a href="#" class="note" onclick="proofM(\''+p.id+'\','+(p.s==3||p.s==2?3:1)+');return false">استبدال</a> · <a href="#" class="note" onclick="delImg(\''+p.id+'\');return false">حذف</a>':'')+'</td></tr>'}).join("")+'</table></div></div>'},
+ return '<div class="card"><h3>المكونات ('+fm(D.parts.length)+' بند)</h3><p class="note">'+PS.map(function(s,i){return s+': '+fm(c[i])}).join(" · ")+'<br>لاختيار «تم الشراء» أو «تم التنفيذ» لازم ترفع صورة إثبات (فاتورة أو المكوّن)، ويفحصها الذكاء الاصطناعي ويعتمدها (وإذا تعذّر الفحص تقنيًا يمكن الاعتماد المبدئي حسب الشكل).</p><div class="wrap"><table class="tbl"><tr><th>البند</th><th>الكمية</th><th>الحالة</th><th>الإثبات</th></tr>'+D.parts.map(function(p){return '<tr><td>'+esc(p.n)+'</td><td>'+fm(p.q)+'</td><td><select onchange="setPart(\''+p.id+'\',this.value)" class="pill '+PC[p.s]+'" '+(me?'':'')+'>'+PS.map(function(s,i){return '<option value="'+i+'"'+(i==p.s?" selected":"")+'>'+s+'</option>'}).join("")+'</select></td><td>'+(p.img?'<a href="'+su(p.img)+'" data-sp="'+esc(p.img)+'" target="_blank"><img class="th" src="'+su(p.img)+'" data-sp="'+esc(p.img)+'" alt=""></a><br>'+apB(p)+'<span class="note"> '+esc(p.note)+'</span><br>'+(p.ap=="tech"?'<a href="#" class="note" onclick="proofM(\''+p.id+'\','+(p.pv||(p.s==3||p.s==2?3:1))+');return false">اعتماد مبدئي</a> · ':'')+'<a href="#" class="note" onclick="proofM(\''+p.id+'\','+(p.s==3||p.s==2?3:1)+');return false">استبدال</a> · <a href="#" class="note" onclick="delImg(\''+p.id+'\');return false">حذف</a>':'')+'</td></tr>'}).join("")+'</table></div></div>'},
 inst:function(){var l=D.inst.slice().sort(function(a,b){return b.ts-a.ts});
  return '<div class="card"><h3>التركيب والتنفيذ — كل ما تنشره هنا يظهر في الرئيسية</h3>'+(me?'<form class="f" onsubmit="addI(event)"><input type="text" name="t" placeholder="اكتب تحديث التركيب" required><input type="file" name="f" accept="image/*"><button class="btn">نشر</button></form>':'<div class="row"><span class="note">النشر لأعضاء الفريق فقط.</span><button class="btn" onclick="loginM()">دخول الفريق</button></div>')+(l.map(function(x){return '<div class="upd row" style="align-items:flex-start"><div><b>'+esc(x.w)+'</b> — '+esc(x.t)+'<small>'+dt(x.ts)+'</small>'+(x.img?'<img src="'+su(x.img)+'" data-sp="'+esc(x.img)+'" alt="" style="max-width:260px;width:100%;border-radius:10px;margin-top:8px;display:block">':'')+'</div>'+(me?'<button class="pill s-n" onclick="delI(\''+x.id+'\')">حذف</button>':'')+'</div>'}).join("")||'<p class="note">لا توجد تحديثات بعد.</p>')+'</div>'},
 msgs:function(){if(!me)return lock("الرسائل متاحة لأعضاء الفريق بعد تسجيل الدخول.","loginM()","دخول الفريق");var h='',cs=canSend();
