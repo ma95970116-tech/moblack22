@@ -774,7 +774,7 @@ tasks:function(){var h='';
  h+='<div id="tk-body">'+tkBody()+'</div>';
  return h},
 parts:function(){var c=[0,0,0,0];D.parts.forEach(function(p){c[p.s]++});
- return '<div class="card"><h3>المكونات ('+fm(D.parts.length)+' بند)</h3><p class="note">'+PS.map(function(s,i){return s+': '+fm(c[i])}).join(" · ")+'<br>لاختيار «تم الشراء» أو «تم التنفيذ» لازم ترفع صورة إثبات (فاتورة أو المكوّن)، ويفحصها الذكاء الاصطناعي ويعتمدها (وإذا تعذّر الفحص تقنيًا يمكن الاعتماد المبدئي حسب الشكل).</p><div class="wrap"><table class="tbl"><tr><th>البند</th><th>الكمية</th><th>الحالة</th><th>الإثبات</th></tr>'+D.parts.map(function(p){return '<tr><td>'+esc(p.n)+'</td><td>'+fm(p.q)+'</td><td><select onchange="setPart(\''+p.id+'\',this.value)" class="pill '+PC[p.s]+'" '+(me?'':'')+'>'+PS.map(function(s,i){return '<option value="'+i+'"'+(i==p.s?" selected":"")+'>'+s+'</option>'}).join("")+'</select></td><td>'+(p.img?'<a href="'+su(p.img)+'" data-sp="'+esc(p.img)+'" target="_blank"><img class="th" src="'+su(p.img)+'" data-sp="'+esc(p.img)+'" alt=""></a><br>'+apB(p)+'<span class="note"> '+esc(p.note)+'</span><br>'+(p.ap=="tech"||p.ap=="rej"?'<a href="#" class="note" onclick="proofM(\''+p.id+'\','+(p.pv||(p.s==3||p.s==2?3:1))+');return false">اعتماد مبدئي</a> · ':'')+'<a href="#" class="note" onclick="proofM(\''+p.id+'\','+(p.s==3||p.s==2?3:1)+');return false">استبدال</a> · <a href="#" class="note" onclick="delImg(\''+p.id+'\');return false">حذف</a>':'')+'</td></tr>'}).join("")+'</table></div></div>'},
+ return '<div class="card"><h3>المكونات ('+fm(D.parts.length)+' بند)</h3><p class="note">'+PS.map(function(s,i){return s+': '+fm(c[i])}).join(" · ")+'<br>لاختيار «تم الشراء» أو «تم التنفيذ» لازم ترفع صورة إثبات (فاتورة أو المكوّن)، ويفحصها الذكاء الاصطناعي ويعتمدها (وإذا تعذّر الفحص تقنيًا يمكن الاعتماد المبدئي حسب الشكل).</p><div class="wrap"><table class="tbl"><tr><th>البند</th><th>السعر</th><th>الكمية</th><th>الحالة</th><th>الإثبات</th></tr>'+D.parts.map(function(p){return '<tr><td>'+esc(p.n)+'</td><td>'+priceCell(p)+'</td><td>'+fm(p.q)+'</td><td><select onchange="setPart(\''+p.id+'\',this.value)" class="pill '+PC[p.s]+'" '+(me?'':'')+'>'+PS.map(function(s,i){return '<option value="'+i+'"'+(i==p.s?" selected":"")+'>'+s+'</option>'}).join("")+'</select></td><td>'+(p.img?'<a href="'+su(p.img)+'" data-sp="'+esc(p.img)+'" target="_blank"><img class="th" src="'+su(p.img)+'" data-sp="'+esc(p.img)+'" alt=""></a><br>'+apB(p)+'<span class="note"> '+esc(p.note)+'</span><br>'+(p.ap=="tech"||p.ap=="rej"?'<a href="#" class="note" onclick="proofM(\''+p.id+'\','+(p.pv||(p.s==3||p.s==2?3:1))+');return false">اعتماد مبدئي</a> · ':'')+'<a href="#" class="note" onclick="proofM(\''+p.id+'\','+(p.s==3||p.s==2?3:1)+');return false">استبدال</a> · <a href="#" class="note" onclick="delImg(\''+p.id+'\');return false">حذف</a>':'')+'</td></tr>'}).join("")+'</table></div></div>'},
 inst:function(){var h='<div class="card"><h3>التركيب والتنفيذ — انشر ما أنجزته</h3>'+(me?instFormHtml():'<div class="row"><span class="note">النشر لأعضاء الفريق فقط.</span><button class="btn" onclick="loginM()">دخول الفريق</button></div>')+'</div>';
  var members=[];D.inst.forEach(function(x){if(x.w&&members.indexOf(x.w)<0)members.push(x.w)});
  h+='<div class="card tk-bar"><form class="tk-filters" onsubmit="return false"><input type="search" placeholder="🔍 ابحث باسم العضو أو العنوان أو المحتوى" value="'+esc(TI.q)+'" oninput="TI.q=this.value;instList()">'
@@ -801,7 +801,7 @@ cost:function(){var c=cfg(),L=fx(),paid=D.exp.reduce(function(a,e){return a+paid
  h+='<div class="grid g2"><div class="card"><h3>المصروفات حسب الفئة</h3>'+bars(Object.keys(bc).map(function(n){return[n,bc[n]]}),"#06b6d4")+'</div><div class="card"><h3>المصروفات الشهرية</h3>'+bars(Object.keys(mo).sort().map(function(n){return[n,mo[n]]}),"#7c3aed")+'</div><div class="card"><h3>الميزانية مقابل المدفوع (حسب الفئة)</h3>'+(c.list.filter(function(n){return c.cats[n]}).map(function(n){var a=L.filter(function(e){return e.c==n}).reduce(function(s,e){return s+paidOf(e)},0);return'<div class="upd">'+esc(n)+' <small>'+fm(a)+' من '+fm(c.cats[n])+EG+'</small><div class="bar"><i style="width:'+Math.min(100,pc(a,c.cats[n]))+'%;background:'+(a>c.cats[n]?"#ef4444":"#2563eb")+'"></i></div></div>'}).join("")||'<p class="note">حدّد ميزانيات الفئات لتظهر المقارنة.</p>')+'</div><div class="card"><h3>المدفوع مقابل غير المدفوع</h3>'+bars([["مدفوع",tp,"#22c55e"],["غير مدفوع",tu,"#f59e0b"]])+'</div></div><div class="card"><h3>أغلى 5 مصروفات</h3>'+bars(L.slice().sort(function(a,b){return totOf(b)-totOf(a)}).slice(0,5).map(function(e){return[e.n,totOf(e)]}),"#06b6d4")+'</div>';
  var cp=D.parts.filter(function(p){return p.qb>0});h+='<div class="card"><h3>مشتريات المكونات (من المصروفات المرتبطة)</h3>'+(cp.length?'<div class="wrap"><table class="tbl"><tr><th>المكوّن</th><th>المطلوب</th><th>المُشترى</th><th>المتبقي</th><th>تكلفة الشراء</th></tr>'+cp.map(function(p){return'<tr><td>'+esc(p.n)+'</td><td>'+fm(p.q)+'</td><td>'+fm(p.qb)+'</td><td>'+fm(Math.max(0,p.q-p.qb))+'</td><td>'+fm(p.pc)+EG+'</td></tr>'}).join("")+'</table></div>':'<p class="note">اربط مصروفًا بمكوّن من نافذة الإضافة ليظهر هنا.</p>')+'</div>';
  if(own)h+='<div class="card"><h3>السجل المالي</h3>'+(D.logs.filter(function(l){return l.t.indexOf("💰")==0}).sort(function(a,b){return b.ts-a.ts}).slice(0,15).map(function(l){return'<div class="upd">'+esc(l.t)+'<small>'+dt(l.ts)+' · '+esc(l.w)+'</small></div>'}).join("")||'<p class="note">لا توجد حركات مالية بعد.</p>')+'</div>';
- return h+V.costOld().slice(V.costOld().indexOf('<div class="card"><h3>التكاليف حسب البند'))},
+ return mcPanel()+h+V.costOld().slice(V.costOld().indexOf('<div class="card"><h3>التكاليف حسب البند'))},
 costOld:function(){var T=D.parts.reduce(function(a,p){return a+p.q*p.u},0),Sp=D.parts.reduce(function(a,p){return a+(p.s>0?p.q*p.u:0)},0);
  return '<div class="grid g4"><div class="card kpi"><div><span>الميزانية الكلية</span><b>'+fm(T)+'</b><span>جنيه مصري</span></div></div><div class="card kpi"><div><span>تم صرفه</span><b>'+fm(Sp)+'</b><span>'+fm(pc(Sp,T))+'٪</span></div></div><div class="card kpi"><div><span>المتبقي</span><b>'+fm(T-Sp)+'</b><span>جنيه مصري</span></div></div></div><div class="card"><h3>التكاليف حسب البند</h3><div class="wrap"><table class="tbl"><tr><th>البند</th><th>الكمية × السعر</th><th>الإجمالي</th><th style="width:28%">النسبة</th></tr>'+D.parts.map(function(p){var t=p.q*p.u;return '<tr><td>'+esc(p.n)+'</td><td>'+fm(p.q)+' × '+fm(p.u)+'</td><td>'+fm(t)+'</td><td><div class="bar"><i style="width:'+Math.min(100,pc(t,T)*2.5)+'%;background:#2563eb"></i></div></td></tr>'}).join("")+'</table></div></div>'},
 reports:function(){var m=["سبت","أكت","نوف","ديس","يناير","فبر","مارس","أبريل","مايو"],pl=[0,12,25,38,52,66,80,92,100],ac=[0,pc(cnt().d,D.tasks.length)],W=620,H=240,x=function(i){return 40+i*(W-60)/8},y=function(v){return H-30-v*(H-60)/100};
@@ -1014,6 +1014,128 @@ function bkView(){
   +'<p class="note" style="margin-top:8px">النسخ القديمة لا تُحذف تلقائيًا؛ احذفها يدويًا عند الحاجة. آخر 30 نسخة معروضة.</p></div>';
  }
  return h}
+
+/* ===== قسم التكاليف: أسعار المكونات ومساهمات الفريق ===== */
+if(!D.prices)D.prices=[];
+if(!D.mcost)D.mcost=[];
+var MCS=false,CM={q:"",sort:"rem"},MC_EXCL=["م. دعاء","د. محمود محروس"],MC_SUPS=["السيد عبداللاه السيد","محمد علي عنتر جلال","محمد ناصر عبدالحميد","رامز طارق محمد","م. دعاء","د. محمود محروس"];
+function isCostAdmin(){return !!own||MC_SUPS.indexOf(me)>=0}
+/* أسعار المكونات: مصدرها مجموعة prices وتُدمج في بيانات المكونات قبل كل عرض */
+function mergePrices(){if(!D.prices||!D.prices.length)return;var M={};D.prices.forEach(function(x){M[x.id]=x});D.parts.forEach(function(p){if(M[p.id]!==undefined)p.u=M[p.id].u})}
+function priceCell(p){
+ if(!me)return '<span class="note">للفريق فقط</span>';
+ var v=p.u==null||p.u===""?null:+p.u;
+ if(!isCostAdmin())return v==null?'<span class="note">لم يُحدَّد</span>':fm(v)+EG;
+ return '<span class="row" style="gap:4px;flex-wrap:nowrap"><input id="pr_'+p.id+'" type="number" min="0" step="any" value="'+(v==null?"":v)+'" placeholder="السعر" style="width:96px"><button class="pill s-p" onclick="setPrice(\''+p.id+'\')">حفظ</button></span>'}
+function setPrice(id){
+ if(!isCostAdmin()){toast("تعديل الأسعار للمشرفين فقط");return}
+ var el=$("pr_"+id),raw=el?el.value.trim():"",u=raw===""?null:Number(raw);
+ if(u!==null&&(!isFinite(u)||u<0)){toast("أدخل سعرًا صحيحًا (صفر أو أكبر)");return}
+ var p=D.parts.filter(function(x){return x.id==id})[0];if(!p)return;
+ put("prices",{id:id,u:u,by:me||"",ts:Date.now()});
+ act("💲 حدّد سعر «"+p.n+"» "+(u==null?"(بدون سعر)":"إلى "+fm(u)+EG));toast("تم حفظ السعر ✓")}
+
+/* مساهمات الأعضاء: مجموعة mcost، مستند لكل عضو */
+function mcMembers(){return MEM.filter(function(n){return MC_EXCL.indexOf(n)<0})}
+function mcOf(n){return D.mcost.filter(function(x){return x.id==n})[0]||{id:n,due:null,pays:[],log:[]}}
+function mcPaid(m){return (m.pays||[]).reduce(function(a,p){return a+(+p.a||0)},0)}
+function mcSt(m){var pd=mcPaid(m),du=m.due;
+ if(du==null)return{k:"nd",t:"لم يُحدَّد المطلوب",c:"s-b",o:3};
+ if(pd>du)return{k:"ov",t:"زائد عن المطلوب",c:"s-p",o:4};
+ if(pd==du)return{k:"ok",t:"مكتمل",c:"s-d",o:0};
+ if(pd==0)return{k:"no",t:"لم يدفع",c:"s-n",o:1};
+ return{k:"pt",t:"دفع جزءًا",c:"s-b",o:2}}
+function mcSave(n,patch,t){var m=mcOf(n);
+ return put("mcost",Object.assign({},m,patch,{id:n,log:(m.log||[]).concat([{ts:Date.now(),by:me||"",t:t}])}))}
+function mcNum(v){var s=String(v==null?"":v).trim();if(s==="")return NaN;var n=Number(s);return isFinite(n)?n:NaN}
+function mcSetDue(i){
+ if(!isCostAdmin()){toast("تحديد المطلوب للمشرفين فقط");return}
+ var n=mcMembers()[i];if(!n)return;
+ var raw=$("mcd"+i)?$("mcd"+i).value.trim():"",v=raw===""?null:mcNum(raw);
+ if(v!==null&&(isNaN(v)||v<0)){toast("أدخل مبلغًا صحيحًا (صفر أو أكبر)");return}
+ mcSave(n,{due:v},"حدّد المطلوب من «"+n+"»: "+(v==null?"غير محدد":fm(v)+EG));
+ closeM();toast("تم حفظ المطلوب ✓")}
+function mcAddPay(i){
+ if(!isCostAdmin()){toast("تسجيل الدفعات للمشرفين فقط");return}
+ var n=mcMembers()[i],a=mcNum($("mp_a").value),d=$("mp_d").value,nt=$("mp_n").value.trim();
+ if(isNaN(a)||a<=0){toast("أدخل مبلغ دفعة أكبر من صفر");return}
+ if(!d){toast("اختر تاريخ الدفعة");return}
+ var m=mcOf(n),p={id:"pay"+Date.now()+Math.floor(Math.random()*99),a:a,d:d,n:nt,by:me||"",ts:Date.now()};
+ mcSave(n,{pays:(m.pays||[]).concat([p])},"سجّل دفعة "+fm(a)+EG+" من «"+n+"» بتاريخ "+d);
+ act("💰 سجّل دفعة "+fm(a)+EG+" من «"+n+"»");closeM();toast("تم تسجيل الدفعة ✓")}
+function mcEditPay(i,pid){
+ if(!isCostAdmin())return;
+ var n=mcMembers()[i],p=(mcOf(n).pays||[]).filter(function(x){return x.id==pid})[0];if(!p)return;
+ modal('<h3 style="margin:0">تعديل دفعة</h3><p class="note">'+esc(n)+' — يُسجَّل التعديل في سجل العضو مع القيم السابقة، ولا تُحذف الدفعة.</p>'
+ +'<label class="note">المبلغ</label><input id="ep_a" type="number" min="0.01" step="any" value="'+p.a+'">'
+ +'<label class="note">التاريخ</label><input id="ep_d" type="date" value="'+esc(p.d)+'">'
+ +'<label class="note">ملاحظة</label><input id="ep_n" value="'+esc(p.n||"")+'">'
+ +'<div class="row"><button class="btn" onclick="mcSaveEdit('+i+',\''+pid+'\')">حفظ التعديل</button><button class="btn g" onclick="mcModal('+i+')">رجوع</button></div>')}
+function mcSaveEdit(i,pid){
+ if(!isCostAdmin())return;
+ var n=mcMembers()[i],m=mcOf(n),old=(m.pays||[]).filter(function(x){return x.id==pid})[0];if(!old)return;
+ var a=mcNum($("ep_a").value),d=$("ep_d").value,nt=$("ep_n").value.trim();
+ if(isNaN(a)||a<=0){toast("أدخل مبلغ دفعة أكبر من صفر");return}
+ if(!d){toast("اختر تاريخ الدفعة");return}
+ var pays=(m.pays||[]).map(function(x){return x.id==pid?Object.assign({},x,{a:a,d:d,n:nt,eb:me||"",ets:Date.now()}):x});
+ mcSave(n,{pays:pays},"عدّل دفعة «"+n+"»: المبلغ من "+fm(old.a)+EG+" إلى "+fm(a)+EG+(old.d!=d?"، والتاريخ من "+old.d+" إلى "+d:"")+(old.n!=nt?"، والملاحظة من «"+(old.n||"—")+"» إلى «"+(nt||"—")+"»":""));
+ closeM();toast("تم حفظ التعديل ✓")}
+function mcSaveNt(i){
+ if(!isCostAdmin())return;
+ var n=mcMembers()[i];var v=$("mc_nt").value.trim();
+ mcSave(n,{nt:v},"حدّث ملاحظات المشرف على «"+n+"»");closeM();toast("تم حفظ الملاحظات ✓")}
+function mcModal(i){
+ var n=mcMembers()[i];if(!n||!me){loginM();return}
+ var m=mcOf(n),s=mcSt(m),pd=mcPaid(m),adm=isCostAdmin();
+ var rem=m.due==null?"—":(m.due-pd<0?"زيادة "+fm(pd-m.due)+EG:fm(m.due-pd)+EG);
+ var pays=(m.pays||[]).slice().sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0});
+ var ph=pays.length?'<div class="wrap"><table class="tbl"><tr><th>التاريخ</th><th>المبلغ</th><th>ملاحظة</th><th>سجّلها</th>'+(adm?'<th></th>':'')+'</tr>'
+  +pays.map(function(p){return'<tr><td>'+esc(p.d)+'</td><td>'+fm(p.a)+EG+'</td><td>'+esc(p.n||"—")+'</td><td>'+esc(p.by||"—")+'<small> · '+dt(p.ts)+'</small></td>'+(adm?'<td><button class="pill s-b" onclick="mcEditPay('+i+',\''+p.id+'\')">تعديل</button></td>':'')+'</tr>'}).join("")+'</table></div>'
+  :'<p class="note">لا توجد دفعات مسجّلة بعد.</p>';
+ var lg=(m.log||[]).slice().sort(function(a,b){return b.ts-a.ts}).slice(0,40);
+ var lh=lg.length?lg.map(function(l){return'<div class="upd">'+esc(l.t)+'<small>'+dt(l.ts)+' · '+esc(l.by||"—")+'</small></div>'}).join(""):'<p class="note">لا يوجد سجل بعد.</p>';
+ var admin=adm?'<div class="card" style="padding:12px"><h3 style="margin-bottom:8px">تحديد المطلوب</h3><div class="row"><input id="mcd'+i+'" type="number" min="0" step="any" value="'+(m.due==null?"":m.due)+'" placeholder="المبلغ المطلوب (ج.م)"><button class="btn" onclick="mcSetDue('+i+')">حفظ</button></div></div>'
+  +'<div class="card" style="padding:12px"><h3 style="margin-bottom:8px">تسجيل دفعة جديدة</h3><div class="row" style="flex-wrap:wrap"><input id="mp_a" type="number" min="0.01" step="any" placeholder="المبلغ"><input id="mp_d" type="date" value="'+new Date().toISOString().slice(0,10)+'"><input id="mp_n" placeholder="ملاحظة (اختياري)"><button class="btn" onclick="mcAddPay('+i+')">تسجيل</button></div></div>'
+  +'<div class="card" style="padding:12px"><h3 style="margin-bottom:8px">ملاحظات المشرف</h3><textarea id="mc_nt" rows="2" style="width:100%">'+esc(m.nt||"")+'</textarea><div class="row" style="margin-top:8px"><button class="btn" onclick="mcSaveNt('+i+')">حفظ الملاحظات</button></div></div>':'';
+ modal('<h3 style="margin:0">'+esc(n)+'</h3>'
+  +'<div class="kpi" style="gap:10px;flex-wrap:wrap"><div class="upd" style="flex:1">المطلوب<b style="display:block">'+(m.due==null?"غير محدد":fm(m.due)+EG)+'</b></div><div class="upd" style="flex:1">المدفوع<b style="display:block">'+fm(pd)+EG+'</b></div><div class="upd" style="flex:1">المتبقي<b style="display:block">'+rem+'</b></div></div>'
+  +'<p><span class="pill '+s.c+'">'+s.t+'</span></p>'
+  +'<h3 style="margin:10px 0 6px;font-size:15px">سجل الدفعات</h3>'+ph
+  +admin
+  +'<h3 style="margin:10px 0 6px;font-size:15px">سجل التغييرات</h3><div style="max-height:30vh;overflow:auto">'+lh+'</div>'
+  +'<div class="row" style="margin-top:8px"><button class="btn g" onclick="closeM()">إغلاق</button></div>')}
+
+/* لوحة التكاليف: الإحصاءات + الملخص + جدول الأعضاء */
+function mcRows(){
+ var q=(CM.q||"").trim();
+ var L=mcMembers().map(function(n,i){var m=mcOf(n),pd=mcPaid(m);return{n:n,i:i,du:m.due,pd:pd,rm:m.due==null?null:m.due-pd,s:mcSt(m)}});
+ L=L.filter(function(x){return !q||x.n.indexOf(q)>=0});
+ L.sort(function(a,b){
+  if(CM.sort=="nm")return a.n<b.n?-1:a.n>b.n?1:0;
+  if(CM.sort=="st")return (a.s.o-b.s.o)||((b.rm==null?-1e15:b.rm)-(a.rm==null?-1e15:a.rm));
+  return (b.rm==null?-1e15:b.rm)-(a.rm==null?-1e15:a.rm)});
+ if(!L.length)return '<tr><td colspan="5" class="note">لا يوجد أعضاء يطابقون البحث.</td></tr>';
+ return L.map(function(x){return'<tr style="cursor:pointer" onclick="mcModal('+x.i+')"><td><b>'+esc(x.n)+'</b></td><td>'+(x.du==null?'<span class="note">لم يُحدَّد</span>':fm(x.du)+EG)+'</td><td>'+fm(x.pd)+EG+'</td><td>'+(x.rm==null?'—':x.rm<0?'زيادة '+fm(-x.rm)+EG:fm(x.rm)+EG)+'</td><td><span class="pill '+x.s.c+'">'+x.s.t+'</span></td></tr>'}).join("")}
+function mcBody(){var e=$("mc-body");if(e)e.innerHTML=mcRows()}
+function mcPanel(){
+ if(db&&me&&!MCS){MCS=true;sub("prices");sub("mcost")}
+ if(!me)return lock("التكاليف ومساهمات الفريق متاحة لأعضاء الفريق بعد تسجيل الدخول.","loginM()","دخول الفريق");
+ var M=mcMembers(),due=0,paid=0,rem=0,nd=0,done=0,notDone=0;
+ M.forEach(function(n){var m=mcOf(n),pd=mcPaid(m),s=mcSt(m);
+  if(m.due==null)nd++;else{due+=m.due;rem+=Math.max(0,m.due-pd)}
+  paid+=pd;if(s.k=="ok"||s.k=="ov")done++;else notDone++});
+ var est=D.parts.reduce(function(a,p){return a+(+p.q||0)*(+p.u||0)},0),gap=due-est,pct=due?Math.min(100,pc(paid,due)):0;
+ var K=function(l,v,s){return'<div class="card kpi"><div><span>'+l+'</span><b>'+v+'</b><span>'+(s||"")+'</span></div></div>'};
+ var alert=gap<0?'<div class="demo" style="border-color:#ef4444;background:rgba(239,68,68,.12)">🚨 عجز مالي: المساهمات المطلوبة أقل من تكلفة المكونات بمقدار '+fm(-gap)+EG+'</div>'
+  :gap>0?'<div class="demo">ℹ️ المساهمات المطلوبة تزيد عن تكلفة المكونات بمقدار '+fm(gap)+EG+'</div>':'';
+ if(nd)alert+='<div class="demo">⚠️ '+fm(nd)+' عضو لم يُحدَّد لهم المطلوب بعد، فالأرقام لا تشملهم.</div>';
+ return '<div class="card"><h3>التكاليف ومساهمات الفريق</h3>'+alert
+ +'<div class="grid g4" style="margin-top:12px">'+K("تكلفة المكونات",fm(est),EG)+K("إجمالي المبالغ المطلوبة",fm(due),EG)+K("إجمالي المدفوع",fm(paid),EG)+K("إجمالي المتبقي",fm(rem),EG)+'</div>'
+ +'<div class="grid g2" style="margin-top:12px">'+K("أكملوا السداد",fm(done)+" / "+fm(M.length),"عضو")+K("لم يكملوا السداد",fm(notDone),"عضو")+'</div>'
+ +'<div style="margin-top:12px"><div class="row"><span class="note">نسبة السداد الإجمالية</span><b>'+pct+'٪</b></div><div class="bar"><i style="width:'+pct+'%"></i></div></div>'
+ +'<div class="row" style="flex-wrap:wrap;margin:14px 0 10px"><input type="search" placeholder="🔍 ابحث باسم العضو" value="'+esc(CM.q)+'" oninput="CM.q=this.value;mcBody()" style="flex:1;min-width:180px"><select onchange="CM.sort=this.value;go()"><option value="rem"'+(CM.sort=="rem"?" selected":"")+'>ترتيب: الأعلى متبقيًا</option><option value="st"'+(CM.sort=="st"?" selected":"")+'>ترتيب: حالة السداد</option><option value="nm"'+(CM.sort=="nm"?" selected":"")+'>ترتيب: الاسم</option></select></div>'
+ +'<div class="wrap"><table class="tbl"><thead><tr><th>العضو</th><th>المطلوب</th><th>المدفوع</th><th>المتبقي</th><th>الحالة</th></tr></thead><tbody id="mc-body">'+mcRows()+'</tbody></table></div>'
+ +'<p class="note" style="margin-top:8px">اضغط على اسم العضو لعرض التفاصيل وسجل الدفعات.'+(isCostAdmin()?'':' التعديل متاح للمشرفين فقط.')+'</p></div>'}
 
 var LB=false;
 function lclr(){var m=$("le");if(m){m.className="lgm";m.textContent=""}["lu","lp"].forEach(function(i){var e=$(i);if(e)e.classList.remove("bad")})}
@@ -1493,7 +1615,7 @@ function buildLogin(){var ru="";try{ru=localStorage.getItem("lgu")||""}catch(x){
 <div class="lgfoot"><a onclick="ownM()">دخول المالك</a><a onclick="visM()">رسالة للفريق (زائر)</a></div>
 <p>التحقق يتم داخل الصفحة وليس على خادم مستقل، فهو ليس مصادقة آمنة بالكامل.</p></form>`}
 function buildLoginOld(){$("lg").innerHTML='<div class="box"><h2>🎓 تتبّع المشروع</h2><p>روبوت التنظيف المنزلي الذكي</p><select id="lw">'+everyone().map(function(n){return '<option>'+esc(n)+'</option>'}).join("")+'</select><input id="lp" type="password" placeholder="كلمة السر" onkeydown="if(event.key==\'Enter\')login()"><button class="btn" onclick="login()">تسجيل الدخول</button><div class="row"><a href="#" onclick="ownM();return false" class="note">دخول المالك</a><a href="#" onclick="visM();return false" class="note">رسالة للفريق (زائر)</a></div></div>'}
-function go(){try{if(SB.sess)localStorage.setItem("sbme",JSON.stringify({me:me}))}catch(e){}$("lg").style.display=me?"none":"flex";if(!ready||!me)return;if(CH)refreshChat();var h=(location.hash||"#home").slice(1),p=PAGES.filter(function(x){return x[0]==h})[0];if(!p){p=PAGES[0];h="home"}
+function go(){mergePrices();try{if(SB.sess)localStorage.setItem("sbme",JSON.stringify({me:me}))}catch(e){}$("lg").style.display=me?"none":"flex";if(!ready||!me)return;if(CH)refreshChat();var h=(location.hash||"#home").slice(1),p=PAGES.filter(function(x){return x[0]==h})[0];if(!p){p=PAGES[0];h="home"}
  var act0=document.activeElement;if(act0&&/INPUT|SELECT|TEXTAREA/.test(act0.tagName)&&act0.type!="file"&&document.activeElement.closest&&document.activeElement.closest("form")&&$("v").contains(act0))return;
  $("ttl").textContent=p[1];$("v").innerHTML=V[h]();
  $("who").innerHTML=(me?'<span>🟢 '+esc(me)+'</span><button class="btn g" onclick="logout()">خروج</button>':'<span class="note">وضع المشاهدة</span><button class="btn" onclick="loginM()">دخول الفريق</button>')+(own?'<span>🔑 المالك — دخول كـ</span><select onchange="asM(this.value)"><option>المالك</option>'+everyone().map(function(n){return '<option'+(n==me?' selected':'')+'>'+esc(n)+'</option>'}).join("")+'</select><button class="btn g" onclick="outO()">خروج المالك</button>':'');
