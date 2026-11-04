@@ -405,6 +405,7 @@ function hmFeed(){
  D.tests.forEach(function(t){var ts=+String(t.id).slice(1);if(ts>1e12)a.push({w:t.o,t:"سجّل اختبارًا «"+t.n+"»",ts:ts})});
  D.parts.forEach(function(p){if(p.imts)a.push({w:p.imu,t:"رفع إثبات «"+p.n+"» — "+PS[p.s],ts:p.imts})});
  return a.sort(function(x,y){return y.ts-x.ts}).slice(0,10)}
+function hmGreet(){var g=new Date().getHours();return g<5?"طاب ليلك":g<12?"صباح الخير":g<18?"طاب يومك":"مساء الخير"}
 var V={
 home:function(){
  var tasks=D.tasks,n=tasks.length,c=cnt(),td=new Date().toISOString().slice(0,10),soonD=new Date(Date.now()+7*864e5).toISOString().slice(0,10),
@@ -419,8 +420,8 @@ home:function(){
  var last=D.logs.reduce(function(a,l){return Math.max(a,l.ts||0)},0);
  var kp=function(href,ic,col,v,lab,sub){return'<a class="hm-k" href="#'+href+'"><div class="ic" style="background:'+col+'">'+ic+'</div><div><b>'+v+'</b><span>'+lab+(sub?' · '+sub:'')+'</span></div></a>'};
  var tv=function(v){return n?fm(v):"—"},pv=function(v){return np?fm(v):"—"};
- var h='<div class="hm-hero"><div><h2>مرحبًا، '+esc(me)+' 👋</h2><p class="sub">روبوت التنظيف المنزلي الذكي ذاتي الحركة والشحن وتفريغ الأتربة<br><span dir="ltr">Smart Autonomous Cleaning Robot – Self Operation Vacuum Cleaner</span></p>'
-  +'<div class="hm-meta"><span>حالة المشروع: <span class="pill '+st[1]+'">'+esc(st[0])+'</span></span><span>البداية: <b>'+esc(START)+'</b></span><span>النهاية: <b>'+esc(END)+'</b></span><span><b>'+tl+'</b></span>'
+ var h='<div class="hm-hero"><div><h2>'+hmGreet()+'، '+esc(me)+' 👋</h2><p class="sub">روبوت التنظيف المنزلي الذكي ذاتي الحركة والشحن وتفريغ الأتربة<br><span dir="ltr">Smart Autonomous Cleaning Robot – Self Operation Vacuum Cleaner</span></p>'
+  +'<div class="hm-meta"><span>حالة المشروع: <span class="pill '+st[1]+'">'+esc(st[0])+'</span></span>'
   +'<span>آخر تحديث: <b>'+(last?dt(last):"لا توجد حركات مسجّلة")+'</b></span></div></div>'
   +'<div><div class="hm-meta">نسبة الإنجاز الكلية (من المهام)</div>'+(n?'<div class="hm-big">'+fm(pr)+'٪</div><div class="hm-bar"><i style="width:'+pr+'%"></i></div><div class="hm-meta">'+fm(c.d)+' مكتملة من '+fm(n)+' مهمة</div>':'<div class="hm-big">—</div><div class="hm-bar"><i style="width:0"></i></div><div class="hm-meta">لا توجد مهام مسجّلة بعد</div>')+'</div></div>';
  /* KPIs */
@@ -433,6 +434,25 @@ home:function(){
   +kp("tasks","🚨",od.length?"#ef4444":"#94a3b8",tv(od.length),"متأخرة")
   +kp("parts","🛒","#f59e0b",pv(bought),"مكونات تم شراؤها",np?"من "+fm(np):"")
   +kp("parts","🔧","#22a06b",pv(done),"مكونات تم تنفيذها",np?"من "+fm(np):"")+'</div>';
+ /* smart alerts + overview */
+ var AL=[],lvl={n:0,w:1};
+ if(od.length)AL.push(["n","مهام متأخرة عن موعدها: "+fm(od.length),"#tasks"]);
+ if(soon.length)AL.push(["w","مهام يقترب موعد تسليمها خلال ٧ أيام: "+fm(soon.length),"#tasks"]);
+ if(np&&pcnt[0])AL.push(["w","مكونات لم يتم شراؤها: "+fm(pcnt[0])+" من "+fm(np),"#parts"]);
+ if(np&&np-pcnt[3])AL.push(["w","مكونات لم يتم تنفيذها: "+fm(np-pcnt[3])+" من "+fm(np),"#parts"]);
+ var fcf=cfg(),fpaid=D.exp.reduce(function(a,e){return a+paidOf(e)},0),fac=fpaid+legacy(),fdue=D.exp.reduce(function(a,e){return a+totOf(e)-paidOf(e)},0),fut=fcf.total?pc(fac,fcf.total):0;
+ if(fcf.total&&fut>=100)AL.push(["n","تم تجاوز الميزانية الكلية","#cost"]);
+ else if(fcf.total&&fut>=80)AL.push(["w","الصرف وصل "+fm(fut)+"٪ من الميزانية","#cost"]);
+ if(fdue>0)AL.push(["w","مصروفات لم تُسدَّد بالكامل: "+fm(fdue)+EG,"#cost"]);
+ var rsn=rbActive().snapshot;
+ if(RB.mode==="real"&&rsn.conn!=="online")AL.push(["n","الروبوت الحقيقي غير متصل ("+rsn.conn+")","#robot"]);
+ AL.sort(function(a,b){return lvl[a[0]]-lvl[b[0]]});
+ var pb=np?pc(np-pcnt[0],np):0,pe=np?pc(pcnt[3],np):0;
+ h+='<div class="hm-g2"><div class="card"><div class="hm-h"><h3>ما يحتاج إلى انتباهك</h3></div>'
+  +(AL.length?AL.map(function(a){var cl=a[0]=="n"?"s-n":"s-b",tx=a[0]=="n"?"حرج":"تنبيه";return'<div class="hm-t"><div>'+esc(a[1])+'</div><a class="pill '+cl+'" href="'+a[2]+'">'+tx+'</a></div>'}).join(""):'<div class="hm-empty">لا توجد تنبيهات حاليًا ✅</div>')
+  +'</div><div class="card"><div class="hm-h"><h3>رؤية المشروع</h3></div>'
+  +[["إنجاز المهام",pr,"#2563eb"],["شراء المكونات",pb,"#f59e0b"],["تنفيذ المكونات",pe,"#22a06b"]].map(function(r){return'<div style="margin-bottom:10px"><div class="row"><span>'+r[0]+'</span><b>'+fm(r[1])+'٪</b></div><div class="hm-bar s"><i style="width:'+r[1]+'%;background:'+r[2]+'"></i></div></div>'}).join("")
+  +'<div class="hm-fin"><div><span>المهام المتبقية</span><b>'+fm(n-c.d)+'</b></div><div><span>مكونات لم تُشترَ</span><b>'+fm(pcnt[0])+'</b></div></div></div></div>';
  /* stages */
  h+='<div class="hm-g2"><div class="card"><div class="hm-h"><h3>التقدم حسب المراحل</h3><a class="hm-lnk" href="#tasks">كل المهام ←</a></div>'+PH.map(function(p,i){
    var l=tasks.filter(function(t){return t.ph==i}),d=l.filter(function(t){return t.s=="d"}).length,on=HMP==i;
