@@ -294,7 +294,7 @@ async function doProof(id,v,retry){var p=D.parts.filter(function(x){return x.id=
   if(retry&&RT&&RT.pid==id){b=RT.b;up=RT.up;h=RT.h;m=RT.m}
   else{var f=$("pf").files[0],er=await chkImg(f);if(er){st(er);$("pb").disabled=false;return}
    bar(1);st("جاري تجهيز الصورة…");b=await shrink(f);h=await sha2(b);
-   var dup=D.parts.filter(function(x){return x.id!=id&&x.h==h})[0]||D.exp.filter(function(x){return x.h==h})[0];if(dup){fail("هذه الصورة مستخدمة بالفعل لبند «"+(dup.n||"آخر")+"». ارفع صورة خاصة بهذا البند.");return}
+   var dup=D.parts.filter(function(x){return x.id!=id&&x.h==h})[0]||D.exp.filter(function(x){return x.h==h&&x.pid!=id})[0];if(dup){fail("هذه الصورة مستخدمة بالفعل لبند «"+(dup.n||"آخر")+"». ارفع صورة خاصة بهذا البند.");return}
    st("جاري رفع الصورة…");up=await upImg(b,"components");m={imf:f.name||"",imt:b.type,ims:b.size,imu:me||"",imts:Date.now()};
    var old=p.img;await put("parts",Object.assign({},p,m,{img:up.id,h:h,note:"بانتظار الاعتماد بالذكاء الاصطناعي",s:p.s==1?0:p.s==3?2:p.s}));
    if(old&&old!=up.id){await delStored(old)}
