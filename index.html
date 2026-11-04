@@ -71,6 +71,33 @@ aside a{transition:background .2s,transform .2s}aside a:hover{transform:translat
 .rbm{flex:1;min-width:170px;padding:12px 14px;border-radius:12px;border:2px solid var(--bd);background:var(--card);color:var(--tx);font:inherit;cursor:pointer;text-align:center}.rbm b{display:block;font-size:16px}.rbm small{display:block;opacity:.8;margin-top:2px}.rbm.on{border-color:var(--pri);background:var(--pri);color:#fff}
 .rbg{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.rbg label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mut)}.rbg label input:not([type=checkbox]),.rbg label select{width:100%}.rbg .upd{margin:0}
 [hidden]{display:none!important}button:disabled{opacity:.45;cursor:not-allowed}
+/* ===== Home dashboard ===== */
+.hm-hero{background:linear-gradient(135deg,#0f1f4d,#0a1433 60%,#0b3a5c);color:#fff;border:0;border-radius:16px;padding:20px;margin-bottom:14px;display:grid;grid-template-columns:1.6fr 1fr;gap:18px}
+.hm-hero h2{margin:0 0 4px;font-size:24px}.hm-hero .sub{color:#a9bbe8;font-size:14px;line-height:1.7;margin:0 0 12px}
+.hm-meta{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:#c8d4f5}.hm-meta b{color:#fff}
+.hm-big{font-size:44px;font-weight:700;line-height:1}.hm-bar{height:10px;background:rgba(255,255,255,.15);border-radius:99px;overflow:hidden;margin:10px 0 6px}.hm-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#06b6d4,#22c55e)}
+.hm-bar.s{height:7px;background:var(--soft)}.hm-bar.s i{background:#22a06b}
+.hm-kg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+a.hm-k{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;color:var(--tx);text-decoration:none;transition:transform .15s,box-shadow .2s}
+a.hm-k:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(6,182,212,.15)}
+.hm-k .ic{flex-shrink:0;width:42px;height:42px;font-size:19px;border-radius:12px}.hm-k b{font-size:24px;display:block;line-height:1.2}.hm-k span{color:var(--mut);font-size:13px}
+.hm-g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}.hm-g2>.card{margin-bottom:0}
+.hm-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 12px}.hm-h h3{margin:0}
+.hm-lnk{font-size:13px;color:var(--pri);text-decoration:none;background:none;border:0;cursor:pointer;font-family:inherit;padding:0}
+.hm-ph{width:100%;text-align:right;background:var(--soft);border:1px solid transparent;border-radius:12px;padding:10px 12px;margin-bottom:8px;color:var(--tx);font:inherit;cursor:pointer}
+.hm-ph:hover,.hm-ph.on{border-color:var(--pri)}.hm-ph .row small{color:var(--mut)}
+.hm-sub{margin:-2px 0 10px;padding:8px 10px;border-radius:10px;border:1px dashed var(--bd)}
+.hm-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.hm-chip{border:1px solid var(--bd);background:var(--soft);color:var(--tx);border-radius:99px;padding:5px 12px;font:inherit;font-size:13px;cursor:pointer}.hm-chip.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.hm-t{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;background:var(--soft);margin-bottom:6px;font-size:14px}
+.hm-t.late{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45)}.hm-t small{display:block;color:var(--mut);margin-top:2px}
+.hm-fin{display:grid;grid-template-columns:1fr 1fr;gap:8px}.hm-fin div{background:var(--soft);border-radius:10px;padding:9px 11px}.hm-fin span{display:block;color:var(--mut);font-size:12px}.hm-fin b{font-size:17px}
+.hm-quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.hm-quick a{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:12px;background:var(--soft);border:1px solid var(--bd);color:var(--tx);text-decoration:none;font-size:14px;transition:transform .15s,border-color .2s}
+.hm-quick a:hover{transform:translateY(-2px);border-color:var(--pri)}.hm-quick a i{font-style:normal;font-size:22px}
+.hm-empty{color:var(--mut);font-size:13px;padding:6px 0}
+@media(max-width:900px){.hm-hero,.hm-g2{grid-template-columns:1fr}.hm-kg{grid-template-columns:1fr 1fr}.hm-big{font-size:36px}}
+@media(max-width:480px){.hm-kg{grid-template-columns:1fr}.hm-fin{grid-template-columns:1fr}}
 </style>
 <style>html.bt #lg{visibility:hidden}</style></head>
 <body>
@@ -347,11 +374,95 @@ function donut(d,center,sub,size){var r=52,C=2*Math.PI*r,off=0,tot=d.reduce(func
 function trow(t){return '<tr><td>'+esc(t.n)+'</td><td>'+esc(t.o)+'</td><td><button class="pill s-'+t.s+'" onclick="cycleT(\''+t.id+'\')" title="اضغط للتغيير">'+ST[t.s]+'</button></td><td>'+esc(t.due)+'</td>'+(me?'<td><button class="pill s-n" onclick="delT(\''+t.id+'\')">حذف</button></td>':'')+'</tr>'}
 function gal(list,n){var a=list.filter(function(x){return x.img}).slice(0,n);return a.length?'<div class="gal">'+a.map(function(x){return '<figure><img src="'+su(x.img)+'" data-sp="'+esc(x.img)+'" alt=""><figcaption>'+esc(x.t||x.n)+'</figcaption></figure>'}).join("")+'</div>':'<p class="note">لا توجد صور بعد.</p>'}
 function ex(){return D.parts.filter(function(p){return p.s==3}).length}
+/* ===== Home dashboard helpers ===== */
+var HMF="n",HMP=-1;
+function hmSetF(k){HMF=k;go()}
+function hmTogPh(i){HMP=HMP==i?-1:i;go()}
+function hmLate(t){return t.s!="d"&&t.due&&t.due<new Date().toISOString().slice(0,10)}
+function hmRobotHtml(){
+ var P=rbActive(),S=P.snapshot,real=RB.mode==="real",T=S.telemetry,lab,cls,dot;
+ if(!real){lab="Demo Mode";cls="s-b";dot="wn"}
+ else if(S.conn==="online"){lab="Real Robot Online";cls="s-d";dot="ok"}
+ else if(S.conn==="connecting"){lab="Connecting";cls="s-p";dot="wn"}
+ else if(S.conn==="error"){lab="Connection Error";cls="s-n";dot="er"}
+ else{lab="Offline";cls="s-n";dot="er"}
+ var h='<div class="row" style="margin-bottom:10px"><span class="pill '+cls+'" dir="ltr"><span class="dot '+dot+'"></span>'+lab+'</span>'+(real?'<span class="note" dir="ltr">'+esc(S.label)+'</span>':'')+'</div>';
+ if(!T){
+  return h+'<p class="hm-empty">'+(real?'لا توجد قراءات حالية — لا تُعرض بيانات محاكاة في الوضع الحقيقي.'+(S.conn==="connecting"?' بانتظار أول بيانات صالحة من الـ ESP32.':''):'—')+'</p>'}
+ var M=MODES[T.state]||["?",T.state,"#94a3b8"],B=T.battery,bc=B.pct<20?"#ef4444":"#22c55e";
+ h+='<div class="upd">الحالة: <b style="color:'+M[2]+'" dir="ltr">'+esc(M[0])+'</b> <span class="note">('+esc(M[1])+')</span></div>'
+  +'<div class="upd">البطارية: '+fm(Math.round(B.pct))+'٪'+(B.charging?' ⚡':'')+'<div class="bar" style="margin-top:6px"><i style="width:'+Math.max(0,Math.min(100,B.pct))+'%;background:'+bc+'"></i></div></div>'
+  +(T.dust!=null?'<div class="upd">حاوية الأتربة: '+fm(Math.round(T.dust))+'٪<div class="bar" style="margin-top:6px"><i style="width:'+Math.max(0,Math.min(100,T.dust))+'%;background:#7c3aed"></i></div></div>':'')
+  +(T.errors.length?'<div>'+T.errors.map(function(c){return'<span class="pill s-n" dir="ltr">'+esc(c)+'</span>'}).join(" ")+'</div>':'')
+  +(real?'<p class="note" style="margin:6px 0 0">بيانات حقيقية وصلت من الـ ESP32.</p>':'<p class="note" style="margin:6px 0 0;color:#b45309">⚠ محاكاة برمجية — ليست بيانات روبوت حقيقي.</p>');
+ return h}
+function hmRobot(){var n=document.getElementById("hm-rb");if(n)n.innerHTML=hmRobotHtml()}
+function hmFeed(){
+ if(own)return D.logs.slice().sort(function(a,b){return b.ts-a.ts}).slice(0,10).map(function(l){return{w:l.w,t:l.t,ts:l.ts}});
+ var a=[];
+ D.inst.forEach(function(x){a.push({w:x.w,t:"نشر تحديث تركيب: "+x.t,ts:x.ts})});
+ D.exp.forEach(function(e){if(e.ts)a.push({w:e.w,t:"سجّل مصروف «"+e.n+"»",ts:e.ts})});
+ D.tests.forEach(function(t){var ts=+String(t.id).slice(1);if(ts>1e12)a.push({w:t.o,t:"سجّل اختبارًا «"+t.n+"»",ts:ts})});
+ D.parts.forEach(function(p){if(p.imts)a.push({w:p.imu,t:"رفع إثبات «"+p.n+"» — "+PS[p.s],ts:p.imts})});
+ return a.sort(function(x,y){return y.ts-x.ts}).slice(0,10)}
 var V={
-home:function(){var c=cnt(),n=D.tasks.length,td=new Date().toISOString().slice(0,10),soon=new Date(Date.now()+3*864e5).toISOString().slice(0,10),od=D.tasks.filter(function(t){return t.s!="d"&&t.due<td}),ds=D.tasks.filter(function(t){return t.s!="d"&&t.due>=td&&t.due<=soon}),T=D.parts.reduce(function(a,p){return a+p.q*p.u},0),Sp=D.parts.reduce(function(a,p){return a+(p.s>0?p.q*p.u:0)},0),bo=D.parts.filter(function(p){return p.s>0}).length;
- function k(a,b,c2){return '<div class="card kpi"><div><span>'+a+'</span><b>'+b+'</b><span>'+(c2||"")+'</span></div></div>'}
- var al=od.map(function(t){return '<div class="upd"><span class="dot er"></span>متأخرة: '+esc(t.n)+' <small>'+esc(t.due)+' · '+esc(t.o)+'</small></div>'}).concat(ds.map(function(t){return '<div class="upd"><span class="dot wn"></span>تسليم قريب: '+esc(t.n)+' <small>'+esc(t.due)+' · '+esc(t.o)+'</small></div>'})).join("")||'<p class="note">لا توجد تنبيهات.</p>';
- return '<div class="grid g4">'+k("إنجاز المشروع",fm(pc(c.d,n))+"٪","من المهام الفعلية")+k("المهام",fm(c.d)+" / "+fm(n),"مكتملة / الكل")+k("متأخرة",fm(od.length),"متبقية: "+fm(n-c.d))+k("شراء المكونات",fm(pc(bo,D.parts.length))+"٪",fm(bo)+" من "+fm(D.parts.length))+k("الميزانية",fm(T),"جنيه")+k("المصروف",fm(Sp),"جنيه")+k("المتبقي",fm(T-Sp),"جنيه")+k("أعضاء الفريق",fm(everyone().length),"")+'</div><div class="card"><h3>التقدم حسب المرحلة</h3>'+PH.map(function(p,i){var l=D.tasks.filter(function(t){return t.ph==i}),d=l.filter(function(t){return t.s=="d"}).length;return '<div class="upd">'+p[0]+' <small>'+fm(d)+' من '+fm(l.length)+'</small><div class="bar"><i style="width:'+pc(d,l.length)+'%;background:'+p[1]+'"></i></div></div>'}).join("")+'</div><div class="card"><h3>تنبيهات المهام</h3>'+al+'</div>'+recent()},
+home:function(){
+ var tasks=D.tasks,n=tasks.length,c=cnt(),td=new Date().toISOString().slice(0,10),soonD=new Date(Date.now()+7*864e5).toISOString().slice(0,10),
+  od=tasks.filter(hmLate),
+  soon=tasks.filter(function(t){return t.s!="d"&&t.due&&t.due>=td&&t.due<=soonD}),
+  prog=tasks.filter(function(t){return t.s=="p"}),
+  np=D.parts.length,pcnt=[0,0,0,0];D.parts.forEach(function(p){if(pcnt[p.s]!=null)pcnt[p.s]++});
+ var bought=np-pcnt[0],done=pcnt[3],pr=pc(c.d,n);
+ /* status + dates + last update */
+ var st=!n?["لم تبدأ بعد (لا توجد مهام)","s-b"]:c.d==n?["مكتمل","s-d"]:od.length?["متأخر — "+fm(od.length)+" مهمة متأخرة","s-n"]:["قيد التنفيذ","s-p"];
+ var t0=new Date(START).getTime(),t1=new Date(END).getTime(),now=Date.now(),left=Math.ceil((t1-now)/864e5),tl=now<t0?"لم يبدأ بعد":left<0?"انتهت المدة المخططة":"متبقي "+fm(left)+" يوم";
+ var last=D.logs.reduce(function(a,l){return Math.max(a,l.ts||0)},0);
+ var kp=function(href,ic,col,v,lab,sub){return'<a class="hm-k" href="#'+href+'"><div class="ic" style="background:'+col+'">'+ic+'</div><div><b>'+v+'</b><span>'+lab+(sub?' · '+sub:'')+'</span></div></a>'};
+ var tv=function(v){return n?fm(v):"—"},pv=function(v){return np?fm(v):"—"};
+ var h='<div class="hm-hero"><div><h2>مرحبًا، '+esc(me)+' 👋</h2><p class="sub">روبوت التنظيف المنزلي الذكي ذاتي الحركة والشحن وتفريغ الأتربة<br><span dir="ltr">Smart Autonomous Cleaning Robot – Self Operation Vacuum Cleaner</span></p>'
+  +'<div class="hm-meta"><span>حالة المشروع: <span class="pill '+st[1]+'">'+esc(st[0])+'</span></span><span>البداية: <b>'+esc(START)+'</b></span><span>النهاية: <b>'+esc(END)+'</b></span><span><b>'+tl+'</b></span>'
+  +'<span>آخر تحديث: <b>'+(last?dt(last):"لا توجد حركات مسجّلة")+'</b></span></div></div>'
+  +'<div><div class="hm-meta">نسبة الإنجاز الكلية (من المهام)</div>'+(n?'<div class="hm-big">'+fm(pr)+'٪</div><div class="hm-bar"><i style="width:'+pr+'%"></i></div><div class="hm-meta">'+fm(c.d)+' مكتملة من '+fm(n)+' مهمة</div>':'<div class="hm-big">—</div><div class="hm-bar"><i style="width:0"></i></div><div class="hm-meta">لا توجد مهام مسجّلة بعد</div>')+'</div></div>';
+ /* KPIs */
+ h+='<div class="hm-kg">'
+  +kp("reports","📈","#2563eb",n?fm(pr)+"٪":"—","نسبة الإنجاز")
+  +kp("tasks","📋","#0ea5e9",tv(n),"إجمالي المهام")
+  +kp("tasks","✅","#22a06b",tv(c.d),"مكتملة")
+  +kp("tasks","⏳","#8b6cf0",tv(c.p),"قيد التنفيذ")
+  +kp("tasks","🕒","#64748b",tv(c.n),"لم تبدأ")
+  +kp("tasks","🚨",od.length?"#ef4444":"#94a3b8",tv(od.length),"متأخرة")
+  +kp("parts","🛒","#f59e0b",pv(bought),"مكونات تم شراؤها",np?"من "+fm(np):"")
+  +kp("parts","🔧","#22a06b",pv(done),"مكونات تم تنفيذها",np?"من "+fm(np):"")+'</div>';
+ /* stages */
+ h+='<div class="hm-g2"><div class="card"><div class="hm-h"><h3>التقدم حسب المراحل</h3><a class="hm-lnk" href="#tasks">كل المهام ←</a></div>'+PH.map(function(p,i){
+   var l=tasks.filter(function(t){return t.ph==i}),d=l.filter(function(t){return t.s=="d"}).length,on=HMP==i;
+   return'<button class="hm-ph'+(on?' on':'')+'" onclick="hmTogPh('+i+')" aria-expanded="'+on+'"><div class="row"><b><span class="dot" style="background:'+p[1]+'"></span>'+esc(p[0])+'</b><span>'+(l.length?fm(pc(d,l.length))+'٪':'—')+'</span></div><div class="hm-bar s"><i style="width:'+pc(d,l.length)+'%;background:'+p[1]+'"></i></div><div class="row"><small>'+(l.length?fm(d)+' مكتملة · '+fm(l.length-d)+' متبقية':'لا توجد مهام في هذه المرحلة')+'</small><small>'+(on?'إخفاء ▴':'عرض المهام ▾')+'</small></div></button>'
+   +(on?'<div class="hm-sub">'+(l.length?l.map(function(t){return'<div class="hm-t'+(hmLate(t)?' late':'')+'"><div>'+esc(t.n)+'<small>'+esc(t.o)+' · '+esc(t.due||"—")+'</small></div><span class="pill s-'+t.s+'">'+ST[t.s]+'</span></div>'}).join("")+'<a class="hm-lnk" href="#tasks">فتح صفحة المهام ←</a>':'<div class="hm-empty">لا توجد مهام.</div>')+'</div>':'')}).join("")+'</div>';
+ /* task follow-up */
+ var list=HMF=="o"?od:HMF=="s"?soon:HMF=="p"?prog:tasks.filter(function(t){return t.s!="d"});
+ list=list.slice().sort(function(a,b){return(a.due||"9")<(b.due||"9")?-1:1}).slice(0,5);
+ var ch=function(k,lab,v){return'<button class="hm-chip'+(HMF==k?' on':'')+'" onclick="hmSetF(\''+k+'\')">'+lab+' ('+fm(v)+')</button>'};
+ h+='<div class="card"><div class="hm-h"><h3>متابعة المهام</h3><a class="hm-lnk" href="#tasks">عرض كل المهام ←</a></div><div class="hm-chips">'+ch("n","الأقرب موعدًا",Math.min(5,c.n+c.p))+ch("o","متأخرة",od.length)+ch("s","تسليم قريب (٧ أيام)",soon.length)+ch("p","جارية",prog.length)+'</div>'
+  +(list.length?list.map(function(t){var late=hmLate(t);return'<div class="hm-t'+(late?' late':'')+'"><div>'+(late?'🚨 ':'')+esc(t.n)+'<small>'+esc(t.o)+' · '+esc(t.due||"—")+(late?' · متأخرة':'')+'</small></div><span class="pill s-'+t.s+'">'+ST[t.s]+'</span></div>'}).join(""):'<div class="hm-empty">'+(n?'لا توجد مهام في هذا التصنيف.':'لا توجد مهام مسجّلة بعد.')+'</div>')+'</div></div>';
+ /* parts */
+ var pcol=["#ef4444","#f59e0b","#3b82f6","#22a06b"],rec=D.parts.filter(function(p){return p.imts}).sort(function(a,b){return b.imts-a.imts}).slice(0,4);
+ h+='<div class="hm-g2"><div class="card"><div class="hm-h"><h3>حالة المكونات</h3><a class="hm-lnk" href="#parts">صفحة المكونات ←</a></div>'
+  +(np?'<div class="dn">'+donut(PS.map(function(s,i){return[s,pcnt[i],pcol[i]]}),fm(pc(done,np))+"٪","منفّذة",130)+'<div class="leg"><span><b>إجمالي المكونات: '+fm(np)+'</b></span>'+PS.map(function(s,i){return'<span><i style="background:'+pcol[i]+'"></i>'+s+': <b>'+fm(pcnt[i])+'</b></span>'}).join("")+'</div></div>':'<div class="hm-empty">لا توجد مكونات مسجّلة.</div>')
+  +'<h4 style="margin:14px 0 8px;font-size:14px">أحدث المكونات المُحدَّثة</h4>'+(rec.length?rec.map(function(p){return'<div class="hm-t"><div>'+esc(p.n)+'<small>'+esc(p.imu||"")+' · '+dt(p.imts)+'</small></div><span class="pill '+PC[p.s]+'">'+PS[p.s]+'</span></div>'}).join(""):'<div class="hm-empty">لا توجد تحديثات موثّقة بصور بعد.</div>')+'</div>';
+ /* finance — same formulas as the cost page */
+ var cf=cfg(),paid=D.exp.reduce(function(a,e){return a+paidOf(e)},0),lg=legacy(),ac=paid+lg,due=D.exp.reduce(function(a,e){return a+totOf(e)-paidOf(e)},0),ut=cf.total?pc(ac,cf.total):0,uc=ut>=100?"#ef4444":ut>=80?"#f59e0b":"#2563eb";
+ var fb=function(l,v){return'<div><span>'+l+'</span><b>'+v+'</b></div>'};
+ h+='<div class="card"><div class="hm-h"><h3>الملخص المالي</h3><a class="hm-lnk" href="#cost">صفحة التكاليف ←</a></div>'
+  +(cf.total?'<div class="hm-fin">'+fb("الميزانية الكلية",fm(cf.total)+EG)+fb("المصروف الفعلي",fm(ac)+EG)+fb("المبالغ المدفوعة",fm(paid)+EG)+fb("غير المدفوعة",fm(due)+EG)+fb("المتبقي من الميزانية",fm(cf.total-ac)+EG)+fb("نسبة الاستهلاك",fm(ut)+"٪")+'</div><div class="hm-bar s" style="margin-top:12px"><i style="width:'+Math.min(100,ut)+'%;background:'+uc+'"></i></div>'+(ut>=100?'<div class="demo" style="border-color:#ef4444;background:rgba(239,68,68,.12)">🚨 تم تجاوز الميزانية الكلية</div>':ut>=80?'<div class="demo">⚠️ الصرف وصل '+fm(ut)+'٪ من الميزانية</div>':'')+(lg?'<p class="note" style="margin:8px 0 0">يشمل '+fm(lg)+EG+' من مكونات مُعلَّمة «تم الشراء» دون مصروف مرتبط.</p>':'')
+   :'<div class="demo">لم يتم تحديد الميزانية'+(own?' — حدّدها من صفحة التكاليف.':' — يحددها المالك.')+'</div><div class="hm-fin" style="margin-top:10px">'+fb("المصروف الفعلي",fm(ac)+EG)+fb("غير المدفوعة",fm(due)+EG)+'</div>')+'</div></div>';
+ /* robot + activity */
+ var fd=hmFeed();
+ h+='<div class="hm-g2"><div class="card"><div class="hm-h"><h3>حالة الروبوت</h3><a class="hm-lnk" href="#robot">صفحة حالة الروبوت ←</a></div><div id="hm-rb">'+hmRobotHtml()+'</div></div>'
+  +'<div class="card"><div class="hm-h"><h3>آخر النشاطات</h3>'+(own?'<a class="hm-lnk" href="#log">سجل الحركات ←</a>':'')+'</div>'
+  +(fd.length?fd.map(function(x){return'<div class="upd">'+esc(x.t)+'<small>'+esc(x.w||"—")+' · '+dt(x.ts)+'</small></div>'}).join(""):'<div class="hm-empty">لا توجد نشاطات بعد.</div>')+'</div></div>';
+ /* quick links */
+ h+='<div class="card"><h3>اختصارات سريعة</h3><div class="hm-quick">'+[["tasks","📋","المهام"],["parts","🔩","المكونات"],["inst","🛠️","التركيب والتنفيذ"],["tests","🧪","الاختبارات"],["cost","💰","التكاليف"],["reports","📈","التقارير"],["robot","🤖","حالة الروبوت"]].map(function(q){return'<a href="#'+q[0]+'"><i>'+q[1]+'</i>'+q[2]+'</a>'}).join("")+'</div></div>';
+ return h},
 tasks:function(){var h='';if(me)h+='<div class="card"><h3>إضافة مهمة (للفريق فقط)</h3><form class="f" onsubmit="addT(event)"><select name="ph">'+PH.map(function(p,i){return '<option value="'+i+'">'+p[0]+'</option>'}).join("")+'</select><input type="text" name="n" placeholder="اسم المهمة" required><select name="o">'+[NA].concat(everyone()).map(function(m){return '<option>'+esc(m)+'</option>'}).join("")+'</select><input type="date" name="d"><button class="btn">إضافة</button></form></div>';
  else h+='<div class="card row"><span class="note">تسجيل الدخول بكلمة سر الفريق مطلوب لإضافة المهام أو تغيير حالتها.</span><button class="btn" onclick="loginM()">دخول الفريق</button></div>';
  PH.forEach(function(p,i){var l=D.tasks.filter(function(t){return t.ph==i});h+='<div class="card"><div class="ph"><i style="background:'+p[1]+'"></i><b>'+p[0]+'</b><span class="note">('+fm(l.filter(function(t){return t.s=="d"}).length)+' من '+fm(l.length)+' مكتملة)</span></div><div class="wrap"><table class="tbl"><tr><th>المهمة</th><th>المسؤول</th><th>الحالة</th><th>الاستحقاق</th>'+(me?'<th></th>':'')+'</tr>'+l.map(trow).join("")+'</table></div></div>'});return h},
@@ -742,7 +853,7 @@ async function rbTest(){if(!me||RB.mode!=="real"||(RB.testRes&&RB.testRes.busy))
  RB.testRes={ok:r.ok,msg:r.msg,t:Date.now()};rbLog("real","Test Connection ("+RBC.method.toUpperCase()+"): "+(r.ok?"OK":"FAILED")+" — "+r.msg);rbPaint()}
 function rbTick(){
  try{rbActive().tick()}catch(e){}
- if(location.hash==="#robot"&&ready&&me){if($("rb-rd"))rbPaint();else go()}}
+ if(location.hash==="#robot"&&ready&&me){if($("rb-rd"))rbPaint();else go()}else if((location.hash||"#home")==="#home"&&ready&&me)hmRobot()}
 
 /* ---------- rendering ---------- */
 function rbShell(){
