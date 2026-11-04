@@ -810,7 +810,7 @@ reports:function(){var m=["سبت","أكت","نوف","ديس","يناير","فب
  s+='<polyline fill="none" stroke="#9aa6c8" stroke-width="2" stroke-dasharray="5 4" points="'+pl.map(function(v,i){return x(i)+","+y(v)}).join(" ")+'"/><polyline fill="none" stroke="#22a06b" stroke-width="3" points="'+ac.map(function(v,i){return x(i)+","+y(v)}).join(" ")+'"/>'+ac.map(function(v,i){return '<circle cx="'+x(i)+'" cy="'+y(v)+'" r="4" fill="#22a06b"/>'}).join("")+'</svg>';
  return '<div class="card"><h3>التقدم الفعلي مقابل الخطة الزمنية (٪)</h3><div class="wrap">'+s+'</div><div class="leg" style="flex-direction:row;gap:18px;margin-top:8px"><span><i style="background:#22a06b"></i>الفعلي (من المهام المكتملة)</span><span><i style="background:#9aa6c8"></i>المخطط</span></div></div>'},
 team:function(){return roster()},
-backup:function(){return '<div class="card"><h3>حالة التخزين</h3><p>'+(db?'<span class="dot ok"></span>قاعدة البيانات الدائمة متصلة — التغييرات تُحفظ بعد التحديث.':'<span class="dot er"></span>وضع محلي مؤقت — لا تُحفظ التغييرات بعد إغلاق الصفحة.')+'</p></div><div class="card"><h3>تصدير إلى Excel</h3><p class="note">ملف .xlsx بأوراق: المهام، المكونات (بتنسيق EGP ومعادلات الإجمالي)، الاختبارات، الفريق'+(own?'، وسجل الحركات':'')+'. التنزيل يحتاج موافقتك في نافذة التأكيد.</p><button class="btn" onclick="exportXlsx()">تصدير Excel</button></div><div class="card"><h3>نسخة احتياطية</h3><p class="note">ملف JSON بالمهام والمكونات والاختبارات والتحديثات والرسائل والسجل. المحادثات الخاصة ورسائل الزوار غير مشمولة.</p><div class="row"><button class="btn" onclick="exportBackup()">تنزيل نسخة احتياطية</button></div>'+(own?'<p class="note" style="margin-top:14px">استعادة (للمالك): يُفحص الملف أولًا ثم يُطلب تأكيدك. الاستعادة دمج ولا تحذف أي بيانات حالية.</p><input type="file" accept=".json,application/json" onchange="restoreFile(this)">':'<p class="note">الاستعادة متاحة للمالك فقط.</p>')+'</div>'},
+backup:function(){return bkView()},
 robot:function(){setTimeout(rbPaint,0);return rbShell()},
 tests:function(){var l=D.tests.slice().sort(function(a,b){return b.d<a.d?-1:1}),p=l.filter(function(t){return t.s=="p"}).length,f=l.filter(function(t){return t.s=="f"}).length,r=l.filter(function(t){return t.s=="r"}).length,h='<div class="grid g4"><div class="card kpi"><div><span>إجمالي الاختبارات</span><b>'+fm(l.length)+'</b></div></div><div class="card kpi"><div><span>نسبة النجاح</span><b>'+fm(pc(p,l.length-r))+'٪</b></div></div><div class="card kpi"><div><span>ناجحة / فاشلة</span><b>'+fm(p)+' / '+fm(f)+'</b></div></div><div class="card kpi"><div><span>قيد الاختبار</span><b>'+fm(r)+'</b></div></div></div>';
  h+=me?'<div class="card"><h3>تسجيل اختبار</h3><form class="f" onsubmit="addQ(event)" style="flex-direction:column;align-items:stretch"><input name="n" placeholder="اسم الاختبار" required><input name="g" placeholder="الهدف"><input name="x" placeholder="النتيجة المتوقعة"><input name="a" placeholder="النتيجة الفعلية"><select name="s"><option value="r">قيد الاختبار</option><option value="p">ناجح</option><option value="f">فاشل</option></select><input type="date" name="d"><select name="o">'+everyone().map(function(n){return '<option'+(n==me?' selected':'')+'>'+esc(n)+'</option>'}).join("")+'</select><input name="nt" placeholder="ملاحظات"><div><button class="btn">حفظ</button></div></form></div>':'';
@@ -824,8 +824,6 @@ function delQ(id){if(!need())return;if(!confirm("حذف الاختبار؟"))ret
 var QS={p:["ناجح","s-d"],f:["فاشل","s-n"],r:["قيد الاختبار","s-p"]};
 function day(){return new Date().toISOString().slice(0,10)}
 async function saveFile(name,blob){try{var u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000);toast("تم تجهيز الملف ✓")}catch(e){toast("تعذّر التنزيل: "+(e&&e.message||""))}}
-function exportBackup(){if(!me)return;var o={app:"project-tracker",v:1,at:Date.now(),by:me,data:{tasks:D.tasks,parts:D.parts,tests:D.tests,inst:D.inst,msgs:D.msgs,logs:D.logs,exp:D.exp,cfg:D.cfg}};saveFile("backup-"+day()+".json",new Blob([JSON.stringify(o)],{type:"application/json"}));act("أنشأ نسخة احتياطية")}
-function restoreFile(inp){var f=inp.files[0];if(!f)return;if(!own){toast("الاستعادة للمالك فقط");inp.value="";return}f.text().then(function(t){var j,cols=["tasks","parts","tests","inst","msgs","logs","exp","cfg"];try{j=JSON.parse(t)}catch(e){toast("الملف ليس JSON صالحًا");return}var ok=!!(j&&j.app=="project-tracker"&&j.v==1&&j.data);if(ok)cols.forEach(function(c){var a=j.data[c];if(a!=null&&(!Array.isArray(a)||a.some(function(x){return !x||typeof x.id!="string"})))ok=false});if(!ok){toast("ملف النسخة الاحتياطية غير صالح، لم يتغير شيء");inp.value="";return}var n=cols.map(function(c){return c+": "+(j.data[c]||[]).length}).join("، ");if(!confirm("استعادة نسخة بتاريخ "+dt(j.at)+" ("+n+")؟ — ستُدمج: تُستبدل السجلات ذات نفس المعرّف وتُضاف الجديدة، ولا يُحذف أي شيء.")){inp.value="";return}var ps=[];cols.forEach(function(c){(j.data[c]||[]).forEach(function(o){ps.push(put(c,o))})});Promise.all(ps).then(function(){act("استعاد نسخة احتياطية بتاريخ "+dt(j.at));toast("تمت الاستعادة ✓");inp.value=""})})}
 function exportXlsx(){if(!me)return;if(!window.XLSX){toast("مكتبة Excel لم تُحمَّل، تحقق من الاتصال");return}var W=XLSX.utils.book_new(),E='#,##0 "EGP"';W.Workbook={Views:[{RTL:true}]};function sh(n,rows){var ws=XLSX.utils.aoa_to_sheet(rows);ws["!cols"]=rows[0].map(function(){return{wch:24}});XLSX.utils.book_append_sheet(W,ws,n)}
  sh("المهام",[["المهمة","المسؤول","المرحلة","الحالة","الاستحقاق"]].concat(D.tasks.map(function(t){return[t.n,t.o,PH[t.ph]?PH[t.ph][0]:"",ST[t.s],t.due]})));
  var T=0;sh("المكونات",[["البند","الكمية","سعر الوحدة","الإجمالي","الحالة"]].concat(D.parts.map(function(p,i){T+=p.q*p.u;return[p.n,p.q,{t:"n",v:p.u,z:E},{t:"n",v:p.q*p.u,f:"B"+(i+2)+"*C"+(i+2),z:E},PS[p.s]]})).concat([["الإجمالي","","",{t:"n",v:T,f:"SUM(D2:D"+(D.parts.length+1)+")",z:E},""]]));
@@ -833,6 +831,190 @@ function exportXlsx(){if(!me)return;if(!window.XLSX){toast("مكتبة Excel ل�
  sh("الفريق",[["الاسم","الدور","المهام المكتملة","إجمالي المهام"]].concat(everyone().map(function(n){var k=D.tasks.filter(function(t){return t.o==n});return[n,n==LEAD?"القائدة":n==SUP?"المشرف":"عضو",k.filter(function(t){return t.s=="d"}).length,k.length]})));
  if(own)sh("سجل الحركات",[["الوقت","بواسطة","الإجراء"]].concat(D.logs.slice().sort(function(a,b){return b.ts-a.ts}).map(function(l){return[dt(l.ts),l.w,l.t]})));
  saveFile("project-"+day()+".xlsx",new Blob([XLSX.write(W,{bookType:"xlsx",type:"array"})],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));act("صدّر بيانات المشروع إلى Excel")}
+/* ===== قسم التصدير والنسخ الاحتياطي (مطوّر) ===== */
+if(!D.bk)D.bk=[];
+var BKS=false,BKC={from:"",to:"",sec:"all",fmt:"xlsx"},RST=null;
+var BKN={tasks:"المهام",parts:"المكونات والأجهزة",tests:"المشكلات والملاحظات",inst:"التركيبات والتوصيلات",msgs:"الرسائل",logs:"سجل الحركات",exp:"المصروفات",cfg:"الإعدادات والميزانية"};
+var BKSEC=[["all","جميع بيانات المشروع"],["tasks","المهام فقط"],["parts","المكونات والأجهزة فقط"],["inst","التركيبات والتوصيلات فقط"],["tests","المشكلات والملاحظات فقط"],["exp","المصروفات فقط"],["team","بيانات أعضاء الفريق فقط"]];
+var BKK={manual:"يدوي",auto:"تلقائي",pre:"قبل الاستعادة"};
+var BKDATA=["tasks","parts","tests","inst","msgs","logs","exp","cfg"];
+var BKSHEET={tasks:"المهام",parts:"المكونات",inst:"التركيبات",tests:"المشكلات",exp:"المصروفات",team:"الفريق",logs:"سجل الحركات"};
+var BKALL=["tasks","parts","inst","tests","exp","team"];
+
+function bkStamp(){return new Date().toISOString().slice(0,16).replace(/[:T]/g,"-")}
+function bkName(sec,ext){return "project-"+sec+"-"+bkStamp()+"."+ext}
+function bkSize(n){n=+n||0;return n<1024?n+" بايت":n<1048576?(n/1024).toFixed(1)+" KB":(n/1048576).toFixed(2)+" MB"}
+function bkLabel(s){var x=BKSEC.filter(function(y){return y[0]==s})[0];return x?x[1]:s}
+function bkPayload(){return{app:"project-tracker",v:1,at:Date.now(),by:me||"",data:{tasks:D.tasks,parts:D.parts,tests:D.tests,inst:D.inst,msgs:D.msgs,logs:D.logs,exp:D.exp,cfg:D.cfg}}}
+
+/* ---- النسخ الاحتياطي: يُحفظ في قاعدة البيانات ويُسجَّل في السجل ---- */
+async function bkCreate(kind){
+ if(!own){toast("النسخ الاحتياطي للمالك فقط");return false}
+ var o=bkPayload(),txt=JSON.stringify(o),id="bk"+Date.now()+Math.floor(Math.random()*99);
+ var ok=await put("bk",{id:id,kind:kind,by:me||"",at:o.at,size:txt.length,status:"ok",p:txt});
+ if(kind!="pre")saveFile("backup-"+bkStamp()+".json",new Blob([txt],{type:"application/json"}));
+ if(!ok){act("فشل إنشاء نسخة احتياطية في قاعدة البيانات");return false}
+ act("أنشأ نسخة احتياطية ("+BKK[kind]+")");return id}
+async function bkManual(){if(!own){toast("النسخ الاحتياطي للمالك فقط");return}var r=await bkCreate("manual");if(r)toast("تم إنشاء النسخة وتنزيلها ✓")}
+
+function bkValidate(t){
+ var j;try{j=JSON.parse(t)}catch(e){return{err:"الملف ليس JSON صالحًا"}}
+ if(!j||j.app!="project-tracker")return{err:"هذا الملف ليس نسخة احتياطية من هذا الموقع"};
+ if(typeof j.v!="number"||j.v>1)return{err:"إصدار النسخة (v"+j.v+") غير مدعوم في هذا الموقع"};
+ if(!j.data||typeof j.data!="object")return{err:"النسخة لا تحتوي على بيانات"};
+ var cnt=0;
+ for(var i=0;i<BKDATA.length;i++){var c=BKDATA[i],a=j.data[c];if(a==null)continue;
+  if(!Array.isArray(a))return{err:"بيانات «"+c+"» بصيغة غير صحيحة، لم يتغير شيء"};
+  if(a.some(function(x){return !x||typeof x.id!="string"}))return{err:"سجلات «"+c+"» تالفة، لم يتغير شيء"};
+  cnt+=a.length}
+ if(!cnt)return{err:"النسخة فارغة ولا تحتوي على سجلات، لم يتغير شيء"};
+ return{j:j}}
+
+function restoreFile(inp){
+ var f=inp.files[0];inp.value="";if(!f)return;
+ if(!own){toast("الاستعادة للمالك فقط");return}
+ f.text().then(function(t){var r=bkValidate(t);if(r.err){toast(r.err);return}bkConfirm(r.j,f.name)},function(){toast("تعذّرت قراءة الملف")})}
+function bkFromHist(id){if(!own)return;var r=D.bk.filter(function(x){return x.id==id})[0];if(!r){toast("النسخة غير موجودة");return}
+ var v=bkValidate(r.p||"");if(v.err){toast(v.err);return}bkConfirm(v.j,"من السجل ("+dt(r.at)+")")}
+function bkConfirm(j,name){
+ RST=j;
+ var rows=BKDATA.map(function(k){return'<div class="row upd"><span>'+BKN[k]+'</span><b>'+fm((j.data[k]||[]).length)+'</b></div>'}).join("");
+ modal('<h3 style="margin:0">استعادة من نسخة احتياطية</h3>'
+ +'<p class="note">المصدر: '+esc(name)+'<br>تاريخ النسخة: '+dt(j.at)+'<br>أُنشئت بواسطة: '+esc(j.by||"—")+'</p>'
+ +'<div style="max-height:36vh;overflow:auto">'+rows+'</div>'
+ +'<div class="upd" style="color:#c43c3c">تحذير: الاستعادة قد تستبدل البيانات الحالية التي لها نفس المعرّف. سيُنشأ أولًا نسخة تلقائية من البيانات الحالية، ولن يُحذف أي سجل غير موجود في النسخة.</div>'
+ +'<label style="font-size:14px"><input type="checkbox" id="bk_ok"> أفهم أن الاستعادة قد تستبدل البيانات الحالية</label>'
+ +'<div class="row"><button class="btn" onclick="bkRun()">تنفيذ الاستعادة</button><button class="btn g" onclick="RST=null;closeM()">إلغاء</button></div>')}
+async function bkRun(){
+ if(!own){toast("الاستعادة للمالك فقط");return}
+ if(!RST){toast("لا يوجد ملف للاستعادة");return}
+ var ck=$("bk_ok");if(!ck||!ck.checked){toast("فعّل خانة التأكيد أولًا");return}
+ var j=RST;RST=null;
+ var pre=await bkCreate("pre");
+ if(!pre){toast("أُلغيت الاستعادة: تعذّر إنشاء نسخة احتياطية للبيانات الحالية");return}
+ closeM();
+ var ps=[],cnt=0;
+ BKDATA.forEach(function(c){(j.data[c]||[]).forEach(function(o){cnt++;ps.push(put(c,o))})});
+ var res=await Promise.all(ps),bad=res.filter(function(x){return !x}).length;
+ act("استعاد نسخة احتياطية بتاريخ "+dt(j.at)+" ("+cnt+" سجل"+(bad?"، فشل "+bad:"")+")");
+ toast(bad?"اكتملت الاستعادة مع "+bad+" سجل فشل":"تمت الاستعادة بنجاح ✓ ("+cnt+" سجل)")}
+function bkDl(id){if(!own)return;var r=D.bk.filter(function(x){return x.id==id})[0];if(!r||!r.p){toast("النسخة غير متاحة");return}
+ saveFile("backup-"+dt(r.at).replace(/[: ]/g,"-")+".json",new Blob([r.p],{type:"application/json"}))}
+function bkDel(id){if(!own)return;var r=D.bk.filter(function(x){return x.id==id})[0];if(!r)return;
+ if(!confirm("حذف النسخة بتاريخ «"+dt(r.at)+"» نهائيًا؟ لا يمكن التراجع."))return;
+ Promise.resolve(rm("bk",id)).then(function(){act("حذف نسخة احتياطية بتاريخ "+dt(r.at));toast("تم حذف النسخة")},function(e){toast("تعذّر الحذف: "+(e&&e.message||""))})}
+
+/* ---- التصدير: أقسام منفصلة وصيغ XLSX / CSV / JSON ---- */
+function bkRows(){
+ var T={};
+ T.tasks=[["المهمة","المسؤول","المرحلة","الحالة","الاستحقاق"]].concat(D.tasks.map(function(t){return[t.n,t.o||"",PH[t.ph]?PH[t.ph][0]:"",ST[t.s]||"",t.due||""]}));
+ T.parts=[["البند","الكمية","سعر الوحدة","الإجمالي","الحالة"]].concat(D.parts.map(function(p){return[p.n,p.q,p.u,p.q*p.u,PS[p.s]||""]}));
+ T.inst=[["العنوان","التصنيف","الكاتب","التاريخ","الوصف"]].concat(D.inst.map(function(i){return[i.title||"",i.category||"",i.w||"",i.ts?dt(i.ts):"",i.t||""]}));
+ T.tests=[["الاختبار","الهدف","المتوقع","الفعلي","الحالة","التاريخ","المسؤول","ملاحظات"]].concat(D.tests.map(function(t){return[t.n,t.g||"",t.x||"",t.a||"",(QS[t.s]||[""])[0],t.d||"",t.o||"",t.nt||""]}));
+ T.exp=[["المصروف","الفئة","الكمية","سعر الوحدة","الإجمالي","التاريخ","المورد","طريقة الدفع","حالة الدفع","المدفوع","المتبقي","ملاحظات"]].concat(D.exp.map(function(e){return[e.n,e.c||"",e.q,e.u,totOf(e),e.d||"",e.s||"",e.m||"",SL[e.st]||"",paidOf(e),totOf(e)-paidOf(e),e.nt||""]}));
+ T.team=[["الاسم","الدور","المهام المكتملة","إجمالي المهام"]].concat(everyone().map(function(n){var k=D.tasks.filter(function(t){return t.o==n});return[n,n==LEAD?"القائدة":n==SUP?"المشرف":"عضو",k.filter(function(t){return t.s=="d"}).length,k.length]}));
+ if(own)T.logs=[["الوقت","بواسطة","الإجراء"]].concat(D.logs.slice().sort(function(a,b){return b.ts-a.ts}).map(function(l){return[dt(l.ts),l.w,l.t]}));
+ return T}
+function bkCsv(rows){return rows.map(function(r){return r.map(function(v){v=v==null?"":String(v);return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(",")}).join("\r\n")}
+function bkSet(k,v){BKC[k]=v}
+function bkExport(){
+ if(!me){loginM();return}
+ var sec=BKC.sec,fmt=BKC.fmt,T=bkRows();
+ var keys=sec=="all"?BKALL.concat(own?["logs"]:[]):[sec];
+ if(sec!="all"&&!T[sec]){toast("هذا القسم غير متاح لك");return}
+ var total=keys.reduce(function(a,k){return a+((T[k]||[]).length-1)},0);
+ if(total<=0){toast("لا توجد سجلات في «"+bkLabel(sec)+"» لتصديرها");return}
+ var stamp=bkStamp();
+ if(fmt=="xlsx"){
+  if(!window.XLSX){toast("مكتبة Excel لم تُحمَّل، تحقق من الاتصال");return}
+  var W=XLSX.utils.book_new();W.Workbook={Views:[{RTL:true}]};
+  keys.forEach(function(k){var rows=T[k],ws=XLSX.utils.aoa_to_sheet(rows);ws["!cols"]=rows[0].map(function(){return{wch:22}});XLSX.utils.book_append_sheet(W,ws,BKSHEET[k]||k)});
+  saveFile(bkName(sec,"xlsx"),new Blob([XLSX.write(W,{bookType:"xlsx",type:"array"})],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
+ }else if(fmt=="csv"){
+  keys.forEach(function(k,i){setTimeout(function(){saveFile(bkName(k,"csv"),new Blob(["\ufeff"+bkCsv(T[k])],{type:"text/csv;charset=utf-8"}))},i*700)});
+ }else{
+  var J={};
+  keys.forEach(function(k){
+   if(k=="team")J.team=T.team.slice(1).map(function(r){return{name:r[0],role:r[1],done:r[2],total:r[3]}});
+   else if(k=="logs")J.logs=D.logs;
+   else J[k]=D[k]});
+  saveFile(bkName(sec,"json"),new Blob([JSON.stringify({app:"project-tracker",v:1,type:"export",section:sec,at:Date.now(),by:me,data:J},null,2)],{type:"application/json"}));
+ }
+ act("صدّر "+bkLabel(sec)+" بصيغة "+fmt.toUpperCase())}
+
+/* ---- تقرير المشروع (للطباعة أو الحفظ كـ PDF من نافذة الطباعة) ---- */
+function bkReport(pdf){
+ if(!me){loginM();return}
+ var f=BKC.from,t=BKC.to,inR=function(d){return(!f||(d||"")>=f)&&(!t||(d||"")<=t)};
+ var E=function(v){return esc(v==null?"":v)};
+ var tk=D.tasks,dn=tk.filter(function(x){return x.s=="d"}).length,pr=tk.filter(function(x){return x.s=="p"}).length,ns=tk.length-dn-pr,pct=pc(dn,tk.length);
+ var pT=D.parts.reduce(function(a,p){return a+p.q*p.u},0);
+ var ex=D.exp.filter(function(e){return inR(e.d)}),exT=ex.reduce(function(a,e){return a+totOf(e)},0),exP=ex.reduce(function(a,e){return a+paidOf(e)},0);
+ var ins=D.inst.filter(function(i){return inR(i.ts?new Date(i.ts).toISOString().slice(0,10):"")});
+ var ts=D.tests.filter(function(x){return inR(x.d)}),okT=ts.filter(function(x){return x.s=="p"}).length,flT=ts.filter(function(x){return x.s=="f"}).length;
+ var K=function(l,v){return'<div class="k"><b>'+v+'</b><span>'+l+'</span></div>'};
+ var tb=function(h,rows){return rows.length?'<table><thead><tr>'+h.map(function(x){return'<th>'+x+'</th>'}).join("")+'</tr></thead><tbody>'+rows.map(function(r){return'<tr>'+r.map(function(c){return'<td>'+c+'</td>'}).join("")+'</tr>'}).join("")+'</tbody></table>':'<p class="empty">لا توجد سجلات في هذه الفترة.</p>'};
+ var css='body{font-family:Tajawal,Tahoma,Arial,sans-serif;color:#0f1b3d;margin:0;padding:28px;background:#fff}'
+ +'.hd{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #2563eb;padding-bottom:12px;gap:12px;flex-wrap:wrap}'
+ +'.logo{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#3b82f6,#2563eb);display:grid;place-items:center;font-size:26px;margin-left:12px}'
+ +'h1{margin:0;font-size:24px}h2{font-size:16px;margin:22px 0 8px;border-bottom:1px solid #e3e8f2;padding-bottom:6px;break-after:avoid}'
+ +'.meta{color:#6b7794;font-size:13px}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}'
+ +'.k{border:1px solid #e3e8f2;border-radius:10px;padding:10px}.k b{display:block;font-size:18px}.k span{color:#6b7794;font-size:12px}'
+ +'.bar{height:8px;background:#eef2f8;border-radius:9px;overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;background:#22a06b}'
+ +'table{width:100%;border-collapse:collapse;font-size:12px}th,td{border-bottom:1px solid #e3e8f2;padding:6px;text-align:right;vertical-align:top}th{background:#f5f7fb;color:#6b7794;font-weight:500}'
+ +'.empty{color:#6b7794;font-size:13px}.bt{margin:0 0 14px}.bt button{font:inherit;padding:8px 16px;border-radius:8px;border:0;background:#2563eb;color:#fff;cursor:pointer;margin-left:8px}'
+ +'@media print{.bt{display:none}body{padding:0}tr{break-inside:avoid}}@page{size:A4;margin:14mm}';
+ var period=(f||t)?"الفترة: "+(f||"البداية")+" إلى "+(t||"اليوم"):"كامل المدة";
+ var html='<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تقرير مشروع التخرج</title><style>'+css+'</style></head><body>'
+ +'<div class="bt"><button onclick="window.print()">طباعة</button><button onclick="window.print()">حفظ كـ PDF</button><span class="meta">لحفظ PDF اختر «حفظ كـ PDF» في خيارات الوجهة بنافذة الطباعة.</span></div>'
+ +'<div class="hd"><div style="display:flex;align-items:center"><div class="logo">🎓</div><div><h1>تقرير مشروع التخرج</h1><div class="meta">تتبّع المشروع — روبوت التنظيف المنزلي الذكي</div></div></div>'
+ +'<div class="meta">تاريخ الإصدار: '+dt(Date.now())+'<br>'+period+'<br>أعدّه: '+E(me)+'</div></div>'
+ +'<h2>الملخص</h2><div class="kpis">'+K("نسبة إنجاز المهام",pct+"٪")+K("تكلفة المكونات الإجمالية",fm(pT)+" ج.م")+K("مصروفات الفترة",fm(exT)+" ج.م")+K("المدفوع / المتبقي",fm(exP)+" / "+fm(exT-exP))+'</div>'
+ +'<div class="bar"><i style="width:'+pct+'%"></i></div>'
+ +'<div class="kpis" style="margin-top:10px">'+K("مهام مكتملة من "+fm(tk.length),fm(dn))+K("قيد التنفيذ",fm(pr))+K("لم تبدأ",fm(ns))+K("اختبارات ناجحة / فاشلة",fm(okT)+" / "+fm(flT))+'</div>'
+ +'<h2>أولًا: المهام وحالات تنفيذها</h2>'+tb(["المهمة","المسؤول","المرحلة","الحالة","الاستحقاق"],tk.map(function(t){return[E(t.n),E(t.o),E(PH[t.ph]?PH[t.ph][0]:""),E(ST[t.s]),E(t.due)]}))
+ +'<h2>ثانيًا: المكونات والأجهزة</h2>'+tb(["البند","الكمية","سعر الوحدة","الإجمالي","الحالة"],D.parts.map(function(p){return[E(p.n),fm(p.q),fm(p.u),fm(p.q*p.u),E(PS[p.s])]}))
+ +'<h2>ثالثًا: التركيبات والتوصيلات</h2>'+tb(["العنوان","التصنيف","الكاتب","التاريخ","الوصف"],ins.map(function(i){return[E(i.title),E(i.category),E(i.w),E(i.ts?dt(i.ts):""),E((i.t||"").slice(0,200))]}))
+ +'<h2>رابعًا: المشكلات والملاحظات</h2>'+tb(["الاختبار","الهدف","الحالة","التاريخ","ملاحظات"],ts.map(function(t){return[E(t.n),E(t.g),E((QS[t.s]||[""])[0]),E(t.d),E(t.nt)]}))
+ +'<h2>خامسًا: المصروفات</h2>'+tb(["المصروف","الفئة","الإجمالي","المدفوع","المتبقي","التاريخ","الحالة"],ex.map(function(e){return[E(e.n),E(e.c),fm(totOf(e)),fm(paidOf(e)),fm(totOf(e)-paidOf(e)),E(e.d),E(SL[e.st])]}))
+ +'<h2>سادسًا: فريق العمل</h2>'+tb(["الاسم","الدور","المهام المكتملة","إجمالي المهام"],everyone().map(function(n){var k=D.tasks.filter(function(t){return t.o==n});return[E(n),E(n==LEAD?"القائدة":n==SUP?"المشرف":"عضو"),fm(k.filter(function(t){return t.s=="d"}).length),fm(k.length)]}))
+ +'</body></html>';
+ var w=window.open("","_blank");if(!w){toast("اسمح بالنوافذ المنبثقة لعرض التقرير");return}
+ w.document.open();w.document.write(html);w.document.close();
+ if(pdf)toast("في نافذة الطباعة اختر «حفظ كـ PDF» كوجهة");
+ act("أنشأ تقرير المشروع"+(f||t?" للفترة "+(f||"البداية")+" — "+(t||"اليوم"):""))}
+
+/* ---- عرض القسم ---- */
+function bkView(){
+ if(db&&own&&!BKS){BKS=true;sub("bk")}
+ var H=D.bk.slice().sort(function(a,b){return b.at-a.at}),L=H[0];
+ var st=db?'<span class="dot ok"></span>قاعدة البيانات الدائمة متصلة — التغييرات محفوظة':'<span class="dot er"></span>وضع محلي مؤقت — لا تُحفظ البيانات بعد إغلاق الصفحة';
+ var lastT=L?dt(L.at)+' · '+bkSize(L.size)+' · '+(L.status=="ok"?'<span class="pill s-d">ناجحة</span>':'<span class="pill s-n">فاشلة</span>'):'<span class="note">لا توجد نسخ احتياطية بعد</span>';
+ var secOpts=BKSEC.map(function(x){return'<option value="'+x[0]+'"'+(BKC.sec==x[0]?' selected':'')+'>'+x[1]+'</option>'}).join("");
+ var fmtOpt=function(v,l){return'<option value="'+v+'"'+(BKC.fmt==v?' selected':'')+'>'+l+'</option>'};
+ var h='<div class="card"><div class="row" style="flex-wrap:wrap"><div><h3 style="margin-bottom:6px">حالة التخزين والنسخ</h3><div>'+st+'</div></div><div class="note">آخر نسخة: '+lastT+'</div></div></div>';
+ h+='<div class="grid g3">'
+ +'<div class="card"><h3>💾 النسخ الاحتياطي والاستعادة</h3><p class="note">نسخة كاملة من بيانات الموقع بصيغة JSON، تُسمّى بالتاريخ والوقت وتُسجَّل في السجل.</p>'
+ +(own?'<div class="row" style="flex-wrap:wrap;margin-bottom:8px"><button class="btn" onclick="bkManual()">نسخ احتياطي الآن</button><button class="btn g" onclick="$(\'bk_file\').click()">استعادة من ملف</button><input type="file" id="bk_file" accept=".json,application/json" style="display:none" onchange="restoreFile(this)"></div><p class="note">الاستعادة تفحص الملف أولًا، وتُنشئ نسخة تلقائية من البيانات الحالية قبل تنفيذها.</p>'
+ :'<p class="note">النسخ والاستعادة متاحان للمالك فقط.</p>')
+ +'</div>'
+ +'<div class="card"><h3>📤 تصدير البيانات</h3>'
+ +'<div class="row" style="flex-wrap:wrap;margin-bottom:8px"><select style="flex:1;min-width:170px" onchange="bkSet(\'sec\',this.value)">'+secOpts+'</select><select onchange="bkSet(\'fmt\',this.value)">'+fmtOpt("xlsx","Excel (XLSX)")+fmtOpt("csv","CSV")+fmtOpt("json","JSON")+'</select></div>'
+ +'<div class="row" style="flex-wrap:wrap"><button class="btn" onclick="bkExport()">تصدير</button><button class="btn g" onclick="exportXlsx()">Excel سريع (كل الأوراق)</button></div>'
+ +'<p class="note">XLSX ملف Excel حقيقي. CSV ينزّل ملفًا لكل قسم. JSON يحوي السجلات الخام.</p></div>'
+ +'<div class="card"><h3>🖨️ تقرير المشروع</h3>'
+ +'<div class="row" style="flex-wrap:wrap;margin-bottom:8px"><label class="note">من <input type="date" value="'+BKC.from+'" onchange="bkSet(\'from\',this.value)"></label><label class="note">إلى <input type="date" value="'+BKC.to+'" onchange="bkSet(\'to\',this.value)"></label></div>'
+ +'<div class="row" style="flex-wrap:wrap"><button class="btn" onclick="bkReport(false)">طباعة التقرير</button><button class="btn g" onclick="bkReport(true)">حفظ PDF</button></div>'
+ +'<p class="note">الفترة تُطبّق على المصروفات والاختبارات والتركيبات. التقرير يتضمن الشعار والتاريخ وإحصاءات المهام ونسب الإنجاز، ويدعم RTL.</p></div>'
+ +'</div>';
+ if(own){
+  var rows=H.slice(0,30).map(function(r){return'<tr><td>'+dt(r.at)+'</td><td>'+(BKK[r.kind]||r.kind)+'</td><td>'+bkSize(r.size)+'</td><td>'+(r.status=="ok"?'<span class="pill s-d">ناجحة</span>':'<span class="pill s-n">فاشلة</span>')+'</td><td style="white-space:nowrap"><button class="pill s-p" onclick="bkDl(\''+r.id+'\')">تنزيل</button> <button class="pill s-b" onclick="bkFromHist(\''+r.id+'\')">استعادة</button> <button class="pill s-n" onclick="bkDel(\''+r.id+'\')">حذف</button></td></tr>'}).join("");
+  h+='<div class="card"><h3>🗂️ سجل النسخ الاحتياطية ('+fm(H.length)+')</h3>'
+  +(H.length?'<div class="wrap"><table class="tbl"><tr><th>التاريخ</th><th>النوع</th><th>الحجم</th><th>الحالة</th><th>إجراءات</th></tr>'+rows+'</table></div>':'<p class="note">لا توجد نسخ محفوظة بعد.</p>')
+  +'<p class="note" style="margin-top:8px">النسخ القديمة لا تُحذف تلقائيًا؛ احذفها يدويًا عند الحاجة. آخر 30 نسخة معروضة.</p></div>';
+ }
+ return h}
+
 var LB=false;
 function lclr(){var m=$("le");if(m){m.className="lgm";m.textContent=""}["lu","lp"].forEach(function(i){var e=$(i);if(e)e.classList.remove("bad")})}
 function lerr(id,msg){var m=$("le"),c=document.querySelector(".lgc");m.className="lgm er";m.textContent=msg;if(id)$(id).classList.add("bad");if(c){c.classList.remove("shake");void c.offsetWidth;c.classList.add("shake")}if(id)$(id).focus()}
