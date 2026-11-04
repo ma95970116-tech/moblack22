@@ -148,6 +148,31 @@ main{min-width:0;max-width:100%}
  aside a{padding:9px 10px;font-size:14px}
  .kpi b{font-size:18px}
 }
+
+.inst-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.inst-post{background:var(--soft);border:1px solid var(--bd);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s;min-width:0}
+.inst-post:hover{transform:translateY(-3px);box-shadow:0 8px 22px rgba(6,182,212,.16)}
+.inst-post img{width:100%;height:190px;object-fit:cover;display:block;background:var(--card)}
+.inst-post.txt{border-top:4px solid #06b6d4;background:linear-gradient(160deg,var(--soft),var(--card))}
+.inst-post .bd{padding:12px;display:flex;flex-direction:column;gap:6px;flex:1}
+.inst-post .tag{align-self:flex-start;font-size:11px;padding:2px 9px;border-radius:99px;background:#e0ecff;color:#1d4ed8}
+.inst-post .tx{font-size:14px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+.inst-post .meta{font-size:12px;color:var(--mut);margin-top:auto}
+.inst-post .meta b{color:var(--tx)}
+.inst-post .pill{align-self:flex-start}
+.inst-empty{grid-column:1/-1;text-align:center;padding:28px 12px;color:var(--mut);border:1px dashed var(--bd);border-radius:12px}
+.inst-hero{border-top:4px solid #06b6d4}
+.ins-f{display:flex;flex-direction:column;gap:10px;margin-bottom:6px}
+.ins-f textarea{width:100%;resize:vertical;min-height:84px;line-height:1.6}
+.ins-h{display:flex;align-items:center;gap:10px}.ins-h small{display:block;color:var(--mut);font-size:12px}
+.ins-av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#06b6d4,#2563eb);color:#fff;display:grid;place-items:center;font-weight:700}
+.ins-pv{display:flex;gap:12px;align-items:center;background:var(--soft);border-radius:12px;padding:8px}
+.ins-pv img{width:110px;height:80px;object-fit:cover;border-radius:10px;flex-shrink:0}
+.ins-pv div{display:flex;flex-direction:column;gap:4px;min-width:0}.ins-pv small{color:var(--mut)}
+.ins-btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ins-btns .btn:last-child{margin-inline-start:auto}
+.ins-btns .btn:disabled{opacity:.6;cursor:wait}
+@media(max-width:480px){.inst-grid{grid-template-columns:1fr}.ins-btns .btn{flex:1 1 auto;text-align:center}.ins-btns .btn:last-child{margin-inline-start:0;width:100%}}
 </style>
 <style>html.bt #lg{visibility:hidden}</style></head>
 <body>
@@ -412,9 +437,17 @@ async function doProof(id,v,retry){var p=D.parts.filter(function(x){return x.id=
   if(!r)return;
   await put("parts",Object.assign({},p,m,{s:v,img:up.id,note:r.why,h:h,pv:v,ap:"ai"}));act((v==1?"تم شراء «":"تم تنفيذ «")+p.n+"» — اعتمده الفحص الدقيق بالذكاء الاصطناعي ("+r.conf+"٪): "+r.why);RT=null;closeM();toast("تم الاعتماد ✓ "+r.why)}
  catch(e){bar(0);st("تعذّر: "+(e&&e.message||e&&e.code||e)+(RT&&RT.pid==id?" — الصورة محفوظة، يمكنك إعادة الفحص":""));$("pb").disabled=false;kept()}}
-async function addI(e){e.preventDefault();if(!need())return;var f=e.target,fl=f.f.files[0],id=null,bt=f.querySelector("button");if(bt)bt.disabled=true;
- try{if(fl){if(!SBR()){toast(NOUP);if(bt)bt.disabled=false;return}var er=await chkImg(fl);if(er){toast(er);if(bt)bt.disabled=false;return}id=(await upImg(fl,"updates")).id}}catch(x){toast("فشل رفع الصورة: "+(x&&x.message||""));if(bt)bt.disabled=false;return}
- var ok=await put("inst",{id:"i"+Date.now(),w:me,t:f.t.value,img:id||"",ts:Date.now()});if(bt)bt.disabled=false;if(!ok)return;act("نشر تحديث تركيب: "+f.t.value);f.reset()}
+async function addI(e){e.preventDefault();if(!need())return;var f=e.target,txt=f.t.value.trim(),fl=IMGF,bt=f.querySelector("button[name=go]");
+ if(!txt&&!fl){toast("اكتب نصًا أو أضف صورة");return}
+ if(bt){bt.disabled=true;bt.textContent="جارٍ النشر…"}
+ var fail=function(m){toast(m);if(bt){bt.disabled=false;bt.textContent="نشر التحديث"}};
+ var id=null;
+ try{if(fl){if(!SBR()){fail(NOUP);return}var er=await chkImg(fl);if(er){fail(er);return}if(bt)bt.textContent="جارٍ رفع الصورة…";id=(await upImg(fl,"updates")).id}}catch(x){fail("فشل رفع الصورة: "+(x&&x.message||""));return}
+ if(bt)bt.textContent="جارٍ الحفظ…";
+ var ok=await put("inst",{id:"i"+Date.now(),w:me,t:txt,img:id||"",ts:Date.now()});
+ if(!ok){if(id){try{await delStored(id,true)}catch(x){}}fail("لم يُحفظ المنشور، والنص والصورة ما زالا في النموذج — أعد المحاولة");return}
+ act("نشر تحديث تركيب"+(txt?": "+txt.slice(0,60):" (صورة)"));
+ if(IMGU)URL.revokeObjectURL(IMGU);IMGF=null;IMGU=null;INSTT="";toast("تم نشر التحديث");go()}
 async function delI(id){if(!need())return;if(!confirm("حذف التحديث؟"))return;var r=D.inst.filter(function(x){return x.id==id})[0];if(r&&r.img){try{await delStored(r.img,true)}catch(x){toast("لم يُحذف التحديث: "+x.message);return}}rm("inst",id);act("حذف تحديث تركيب")}
 /* views */
 function cnt(){var c={d:0,p:0,n:0};D.tasks.forEach(function(t){c[t.s]++});return c}
@@ -456,6 +489,16 @@ function hmFeed(){
  D.parts.forEach(function(p){if(p.imts)a.push({w:p.imu,t:"رفع إثبات «"+p.n+"» — "+PS[p.s],ts:p.imts})});
  return a.sort(function(x,y){return y.ts-x.ts}).slice(0,10)}
 function hmGreet(){var g=new Date().getHours();return g<5?"طاب ليلك":g<12?"صباح الخير":g<18?"طاب يومك":"مساء الخير"}
+var IMGF=null,IMGU=null,INSTT="";
+function instPick(inp){var f=inp.files&&inp.files[0];if(!f)return;var fm2=inp.closest("form");if(fm2&&fm2.t)INSTT=fm2.t.value;if(IMGU)URL.revokeObjectURL(IMGU);IMGF=f;IMGU=URL.createObjectURL(f);go()}
+function instClr(){var fm2=document.querySelector("#v form.ins-f");if(fm2)INSTT=fm2.t.value;if(IMGU)URL.revokeObjectURL(IMGU);IMGF=null;IMGU=null;go()}
+function instFormHtml(){var pv=IMGU?'<div class="ins-pv"><img src="'+IMGU+'" alt="معاينة"><div><b>'+esc(IMGF.name||"صورة")+'</b><small>'+Math.max(1,Math.round(IMGF.size/1024))+' KB</small><button type="button" class="btn g" onclick="instClr()">إزالة الصورة</button></div></div>':'';
+ return '<form class="ins-f" onsubmit="addI(event)"><div class="ins-h"><span class="ins-av">'+esc((me||"?").charAt(0))+'</span><div><b>'+esc(me)+'</b><small>ما الذي تم إنجازه اليوم؟</small></div></div>'
+  +'<textarea name="t" rows="3" placeholder="اكتب تحديث التركيب أو التنفيذ (يمكن نشر صورة وحدها)">'+esc(INSTT)+'</textarea>'+pv
+  +'<div class="ins-btns"><label class="btn g">📁 من المعرض<input type="file" accept="image/*" hidden onchange="instPick(this)"></label><label class="btn g">📷 كاميرا<input type="file" accept="image/*" capture="environment" hidden onchange="instPick(this)"></label><button class="btn" name="go" type="submit">نشر التحديث</button></div></form>'}
+function instCard(x,ed){var img=x.img?'<a href="'+su(x.img)+'" data-sp="'+esc(x.img)+'" target="_blank"><img src="'+su(x.img)+'" data-sp="'+esc(x.img)+'" alt="صورة التحديث" loading="lazy"></a>':'';
+ var t=x.t||"",tx=t?(t.length>180?'<div class="tx">'+esc(t.slice(0,180))+'…</div><details><summary class="hm-lnk">عرض النص كاملًا</summary><div class="tx">'+esc(t)+'</div></details>':'<div class="tx">'+esc(t)+'</div>'):'';
+ return '<article class="inst-post'+(x.img?'':' txt')+'">'+img+'<div class="bd"><span class="tag">تركيب وتنفيذ</span>'+tx+'<div class="meta"><b>'+esc(x.w||"—")+'</b> · '+dt(x.ts)+'</div>'+(ed?'<button class="pill s-n" onclick="delI(\''+x.id+'\')">حذف</button>':'')+'</div></article>'}
 var HMAL=false;function hmAlT(){HMAL=!HMAL;go()}
 var V={
 home:function(){
@@ -485,6 +528,10 @@ home:function(){
   +kp("tasks","🚨",od.length?"#ef4444":"#94a3b8",tv(od.length),"متأخرة")
   +kp("parts","🛒","#f59e0b",pv(bought),"مكونات تم شراؤها",np?"من "+fm(np):"")
   +kp("parts","🔧","#22a06b",pv(done),"مكونات تم تنفيذها",np?"من "+fm(np):"")+'</div>';
+ /* latest installation updates */
+ var ups=D.inst.slice().sort(function(a,b){return b.ts-a.ts}).slice(0,3);
+ h+='<div class="card inst-hero"><div class="hm-h"><h3>آخر أعمال التركيب والتنفيذ</h3><a class="hm-lnk" href="#inst">عرض جميع التحديثات ←</a></div><div class="inst-grid">'
+  +(ups.length?ups.map(function(x){return instCard(x,false)}).join(""):'<div class="inst-empty">لا توجد تحديثات بعد. ابدأ أول توثيق لعملك من قسم التركيب والتنفيذ.</div>')+'</div></div>';
  /* smart alerts + overview */
  var AL=[],lvl={n:0,w:1};
  if(od.length)AL.push(["n","مهام متأخرة عن موعدها: "+fm(od.length),"#tasks"]);
@@ -526,14 +573,6 @@ home:function(){
  h+='<div class="card"><div class="hm-h"><h3>الملخص المالي</h3><a class="hm-lnk" href="#cost">صفحة التكاليف ←</a></div>'
   +(cf.total?'<div class="hm-fin">'+fb("الميزانية الكلية",fm(cf.total)+EG)+fb("المصروف الفعلي",fm(ac)+EG)+fb("المبالغ المدفوعة",fm(paid)+EG)+fb("غير المدفوعة",fm(due)+EG)+fb("المتبقي من الميزانية",fm(cf.total-ac)+EG)+fb("نسبة الاستهلاك",fm(ut)+"٪")+'</div><div class="hm-bar s" style="margin-top:12px"><i style="width:'+Math.min(100,ut)+'%;background:'+uc+'"></i></div>'+(ut>=100?'<div class="demo" style="border-color:#ef4444;background:rgba(239,68,68,.12)">🚨 تم تجاوز الميزانية الكلية</div>':ut>=80?'<div class="demo">⚠️ الصرف وصل '+fm(ut)+'٪ من الميزانية</div>':'')+(lg?'<p class="note" style="margin:8px 0 0">يشمل '+fm(lg)+EG+' من مكونات مُعلَّمة «تم الشراء» دون مصروف مرتبط.</p>':'')
    :'<div class="demo">لم يتم تحديد الميزانية'+(own?' — حدّدها من صفحة التكاليف.':' — يحددها المالك.')+'</div><div class="hm-fin" style="margin-top:10px">'+fb("المصروف الفعلي",fm(ac)+EG)+fb("غير المدفوعة",fm(due)+EG)+'</div>')+'</div></div>';
- /* latest installation updates */
- var ups=D.inst.slice().sort(function(a,b){return b.ts-a.ts}).slice(0,3);
- h+='<div class="card"><div class="hm-h"><h3>آخر تحديثات التركيب</h3><a class="hm-lnk" href="#inst">عرض جميع التحديثات ←</a></div>'
-  +(ups.length?ups.map(function(x){var long=(x.t||"").length>140;
-    return'<div class="upd"><div><b>'+esc(x.w||"—")+'</b><small>'+dt(x.ts)+'</small></div>'
-     +(x.t?(long?'<details><summary class="hm-lnk">عرض النص كاملًا</summary>':'')+'<div class="hm-txt">'+esc(x.t)+'</div>'+(long?'</details>':''):'')
-     +(x.img?'<a href="'+su(x.img)+'" data-sp="'+esc(x.img)+'" target="_blank"><img src="'+su(x.img)+'" data-sp="'+esc(x.img)+'" alt="صورة التحديث" class="hm-ui"></a>':'')+'</div>'}).join(""):'<div class="hm-empty">لا توجد تحديثات بعد.</div>')
-  +'</div>';
  /* robot + activity */
  var fd=hmFeed();
  h+='<div class="hm-g2"><div class="card"><div class="hm-h"><h3>حالة الروبوت</h3><a class="hm-lnk" href="#robot">صفحة حالة الروبوت ←</a></div><div id="hm-rb">'+hmRobotHtml()+'</div></div>'
@@ -548,7 +587,9 @@ tasks:function(){var h='';if(me)h+='<div class="card"><h3>إضافة مهمة (�
 parts:function(){var c=[0,0,0,0];D.parts.forEach(function(p){c[p.s]++});
  return '<div class="card"><h3>المكونات ('+fm(D.parts.length)+' بند)</h3><p class="note">'+PS.map(function(s,i){return s+': '+fm(c[i])}).join(" · ")+'<br>لاختيار «تم الشراء» أو «تم التنفيذ» لازم ترفع صورة إثبات (فاتورة أو المكوّن)، ويفحصها الذكاء الاصطناعي ويعتمدها (وإذا تعذّر الفحص تقنيًا يمكن الاعتماد المبدئي حسب الشكل).</p><div class="wrap"><table class="tbl"><tr><th>البند</th><th>الكمية</th><th>الحالة</th><th>الإثبات</th></tr>'+D.parts.map(function(p){return '<tr><td>'+esc(p.n)+'</td><td>'+fm(p.q)+'</td><td><select onchange="setPart(\''+p.id+'\',this.value)" class="pill '+PC[p.s]+'" '+(me?'':'')+'>'+PS.map(function(s,i){return '<option value="'+i+'"'+(i==p.s?" selected":"")+'>'+s+'</option>'}).join("")+'</select></td><td>'+(p.img?'<a href="'+su(p.img)+'" data-sp="'+esc(p.img)+'" target="_blank"><img class="th" src="'+su(p.img)+'" data-sp="'+esc(p.img)+'" alt=""></a><br>'+apB(p)+'<span class="note"> '+esc(p.note)+'</span><br>'+(p.ap=="tech"||p.ap=="rej"?'<a href="#" class="note" onclick="proofM(\''+p.id+'\','+(p.pv||(p.s==3||p.s==2?3:1))+');return false">اعتماد مبدئي</a> · ':'')+'<a href="#" class="note" onclick="proofM(\''+p.id+'\','+(p.s==3||p.s==2?3:1)+');return false">استبدال</a> · <a href="#" class="note" onclick="delImg(\''+p.id+'\');return false">حذف</a>':'')+'</td></tr>'}).join("")+'</table></div></div>'},
 inst:function(){var l=D.inst.slice().sort(function(a,b){return b.ts-a.ts});
- return '<div class="card"><h3>التركيب والتنفيذ — كل ما تنشره هنا يظهر في الرئيسية</h3>'+(me?'<form class="f" onsubmit="addI(event)"><input type="text" name="t" placeholder="اكتب تحديث التركيب" required><input type="file" name="f" accept="image/*"><button class="btn">نشر</button></form>':'<div class="row"><span class="note">النشر لأعضاء الفريق فقط.</span><button class="btn" onclick="loginM()">دخول الفريق</button></div>')+(l.map(function(x){return '<div class="upd row" style="align-items:flex-start"><div><b>'+esc(x.w)+'</b> — '+esc(x.t)+'<small>'+dt(x.ts)+'</small>'+(x.img?'<img src="'+su(x.img)+'" data-sp="'+esc(x.img)+'" alt="" style="max-width:260px;width:100%;border-radius:10px;margin-top:8px;display:block">':'')+'</div>'+(me?'<button class="pill s-n" onclick="delI(\''+x.id+'\')">حذف</button>':'')+'</div>'}).join("")||'<p class="note">لا توجد تحديثات بعد.</p>')+'</div>'},
+ var h='<div class="card"><h3>التركيب والتنفيذ — انشر ما أنجزته</h3>'+(me?instFormHtml():'<div class="row"><span class="note">النشر لأعضاء الفريق فقط.</span><button class="btn" onclick="loginM()">دخول الفريق</button></div>')+'</div>';
+ h+='<div class="card"><h3>معرض التحديثات ('+fm(l.length)+')</h3>'+(l.length?'<div class="inst-grid">'+l.map(function(x){return instCard(x,!!me)}).join("")+'</div>':'<div class="inst-empty">لا توجد تحديثات بعد. ابدأ أول توثيق لعملك من هنا.</div>')+'</div>';
+ return h},
 msgs:function(){if(!me)return lock("الرسائل متاحة لأعضاء الفريق بعد تسجيل الدخول.","loginM()","دخول الفريق");var h='',cs=canSend();
  if(cs)h+='<div class="card"><h3>رسالة جديدة</h3><form class="f" onsubmit="sendM(event)" style="flex-direction:column;align-items:stretch"><textarea name="t" rows="3" placeholder="اكتب الرسالة" required></textarea><label><input type="checkbox" name="all" checked> كل الأعضاء</label><div class="gal" style="grid-template-columns:repeat(auto-fill,minmax(190px,1fr))">'+MEM.map(function(n){return '<label class="note"><input type="checkbox" name="r" value="'+esc(n)+'"> '+esc(n)+'</label>'}).join("")+'</div><div><button class="btn">إرسال</button></div></form><p class="note">اترك «كل الأعضاء» للإرسال للجميع، أو ألغِه واختر أسماء محددة.</p></div>';
  var l=cs?sent():inbox();
