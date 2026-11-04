@@ -4,9 +4,10 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const key = process.env.ANTHROPIC_API_KEY;
   const gkey = process.env.GEMINI_API_KEY;
-  if (req.method === 'GET') return res.status(200).json({ images: !!(key || gkey) });
+  const qkey = process.env.GROQ_API_KEY;
+  if (req.method === 'GET') return res.status(200).json({ images: !!(key || gkey || qkey) });
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  if (!key && !gkey) return res.status(503).json({ error: 'فحص الذكاء الاصطناعي غير مفعّل (GEMINI_API_KEY غير مضبوط)' });
+  if (!key && !gkey && !qkey) return res.status(503).json({ error: 'فحص الذكاء الاصطناعي غير مفعّل (GROQ_API_KEY غير مضبوط)' });
   const pub = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
   const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
   if (!token) return res.status(401).json({ error: 'انتهت الجلسة، سجّل الدخول من جديد' });
@@ -16,12 +17,29 @@ module.exports = async (req, res) => {
   let b = req.body; if (typeof b === 'string') { try { b = JSON.parse(b); } catch { b = {}; } }
   const prompt = String((b && b.prompt) || '').slice(0, 6000);
   if (!prompt) return res.status(400).json({ error: 'طلب غير صالح' });
+  if (qkey) {
+    try {
+      const c = [];
+      if (b.image) c.push({ type: 'image_url', image_url: { url: 'data:' + b.media + ';base64,' + b.image } });
+      c.push({ type: 'text', text: prompt });
+      const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + qkey },
+        body: JSON.stringify({ model: process.env.GROQ_MODEL || 'qwen/qwen3.6-27b', messages: [{ role: 'user', content: c }], max_tokens: 2000, temperature: 0.1 })
+      });
+      const j = await r.json();
+      if (!r.ok) return res.status(502).json({ error: 'فشل خدمة الفحص (Groq): ' + ((j.error && j.error.message) || r.status) });
+      let text = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
+      text = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      return res.status(200).json({ text });
+    } catch (e) { return res.status(502).json({ error: 'تعذّر الوصول لخدمة الفحص' }); }
+  }
   if (gkey) {
     try {
       const parts = [];
       if (b.image) parts.push({ inline_data: { mime_type: b.media, data: b.image } });
       parts.push({ text: prompt });
-      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+      const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
       const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-goog-api-key': gkey },
