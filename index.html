@@ -1430,8 +1430,10 @@ function mView(){
  +'<select onchange="MTAB=this.value;go()"><option value="all"'+(MTAB=="all"?" selected":"")+'>الكل</option><option value="in"'+(MTAB=="in"?" selected":"")+'>الواردة</option><option value="out"'+(MTAB=="out"?" selected":"")+'>المرسلة</option></select></div>'
  +'<div id="m-list">'+mListHtml()+'</div></div>'}
 /* شريط الإشعارات: عدّاد غير المقروء وتنبيه عند وصول رسالة جديدة */
+var PRSUB=false;
 function mTick(){
  if(db&&me&&!MSUB){MSUB=true;sub("mread")}
+ if(db&&me&&!PRSUB){PRSUB=true;sub("prices");sub("mcost")}
  if(MSEEN_ME!==me){MSEEN_ME=me;MSEEN=null}
  var inc=vis().filter(isUnread),ids=inc.map(function(m){return m.id});
  if(MSEEN===null)MSEEN=ids;
@@ -1449,7 +1451,7 @@ setInterval(mTick,2000);
 var NOVA_MARK='<svg width="40" height="40" viewBox="0 0 200 200" aria-hidden="true"><defs><linearGradient id="navNb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#06b6d4"/></linearGradient></defs> <defs> <linearGradient id="navNb" x1="0" y1="0" x2="1" y2="1"> <stop offset="0" stop-color="#3b82f6"/> <stop offset="1" stop-color="#06b6d4"/> </linearGradient> </defs> <circle cx="100" cy="100" r="96" fill="#0a1433"/> <path d="M 36 100 A 64 64 0 0 0 164 100" fill="none" stroke="#67e8f9" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 14" opacity="0.9"/> <circle cx="100" cy="100" r="58" fill="url(#navNb)"/> <circle cx="100" cy="100" r="36" fill="#0a1433"/> <circle cx="100" cy="100" r="12" fill="#22d3ee"/> <path d="M 100 36 L 103 46 L 100 56 L 97 46 Z" fill="#ffffff"/> <path d="M 150 60 L 152.5 66.5 L 159 69 L 152.5 71.5 L 150 78 L 147.5 71.5 L 141 69 L 147.5 66.5 Z" fill="#ffffff" opacity="0.95"/> </svg>'; function secHead(t,b){return b?'<div class="card" style="padding:10px 14px;background:var(--soft);margin-bottom:10px"><h2 style="margin:0;font-size:17px">'+t+'</h2></div>'+b:''}
 function catCell(p){var cat=pCat(p);if(!me)return '<span class="note">—</span>';if(!isCostAdmin())return esc(cat);
  var opts=cfg().list.map(function(n){return'<option'+(n==cat?' selected':'')+'>'+esc(n)+'</option>'}).join("");
- return '<select onchange="partCat(\''+p.id+'\',this.value)">'+opts+'</select>'}
+ return '<select style="min-width:140px" onchange="partCat(\''+p.id+'\',this.value)">'+opts+'</select>'}
 function mcDueUndo(i){var m=mcOf(mcMembers()[i]);var el=$("mcd"+i);if(el)el.value=m.due==null?"":m.due;toast("تم التراجع عن التغيير")}
 function budUndo(){var el=$("bt");if(el)el.value=+cfg().total||"";toast("تم التراجع عن التغيير")}
 /* ===== إدارة التكاليف: التصميم الجديد (بيانات حقيقية فقط) ===== */
