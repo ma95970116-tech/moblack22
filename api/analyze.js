@@ -3,9 +3,10 @@ const { createClient } = require('@supabase/supabase-js');
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const key = process.env.ANTHROPIC_API_KEY;
-  if (req.method === 'GET') return res.status(200).json({ images: !!key });
+  const gkey = process.env.GEMINI_API_KEY;
+  if (req.method === 'GET') return res.status(200).json({ images: !!(key || gkey) });
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  if (!key) return res.status(503).json({ error: 'فحص الذكاء الاصطناعي غير مفعّل (ANTHROPIC_API_KEY غير مضبوط)' });
+  if (!key && !gkey) return res.status(503).json({ error: 'فحص الذكاء الاصطناعي غير مفعّل (GEMINI_API_KEY غير مضبوط)' });
   const pub = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
   const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
   if (!token) return res.status(401).json({ error: 'انتهت الجلسة، سجّل الدخول من جديد' });
@@ -15,6 +16,23 @@ module.exports = async (req, res) => {
   let b = req.body; if (typeof b === 'string') { try { b = JSON.parse(b); } catch { b = {}; } }
   const prompt = String((b && b.prompt) || '').slice(0, 6000);
   if (!prompt) return res.status(400).json({ error: 'طلب غير صالح' });
+  if (gkey) {
+    try {
+      const parts = [];
+      if (b.image) parts.push({ inline_data: { mime_type: b.media, data: b.image } });
+      parts.push({ text: prompt });
+      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': gkey },
+        body: JSON.stringify({ contents: [{ parts }], generationConfig: { maxOutputTokens: 1000 } })
+      });
+      const j = await r.json();
+      if (!r.ok) return res.status(502).json({ error: 'فشل خدمة الفحص (Gemini): ' + ((j.error && j.error.message) || r.status) });
+      const text = ((j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || []).map((x) => x.text || '').join('\n');
+      return res.status(200).json({ text });
+    } catch (e) { return res.status(502).json({ error: 'تعذّر الوصول لخدمة الفحص' }); }
+  }
   const content = [];
   if (b.image) {
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(b.media)) return res.status(400).json({ error: 'نوع الصورة غير مقبول' });
